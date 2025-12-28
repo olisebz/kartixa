@@ -29,6 +29,12 @@ export default function Card({
     return (
       <button
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
         className={`${baseStyles} w-full text-left ${className}`}
         type="button"
       >

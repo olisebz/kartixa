@@ -61,7 +61,10 @@ export function TableRow({
       onKeyDown={
         isClickable
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === "Enter") {
+                onClick?.();
+              } else if (e.key === " ") {
+                e.preventDefault();
                 onClick?.();
               }
             }
