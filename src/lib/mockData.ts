@@ -31,21 +31,8 @@ export interface League {
   createdAt: string;
   drivers: Driver[];
   races: Race[];
+  tracks: string[];
 }
-
-export interface Track {
-  id: string;
-  name: string;
-  location: string;
-}
-
-// Demo tracks
-export const tracks: Track[] = [
-  { id: "track-1", name: "Speedway Arena", location: "Berlin" },
-  { id: "track-2", name: "Thunder Circuit", location: "Munich" },
-  { id: "track-3", name: "Velocity Park", location: "Hamburg" },
-  { id: "track-4", name: "Apex Karting", location: "Frankfurt" },
-];
 
 // Demo leagues
 export const leagues: League[] = [
@@ -54,6 +41,7 @@ export const leagues: League[] = [
     name: "Summer Championship 2025",
     description: "The main summer league with weekly races across multiple tracks.",
     createdAt: "2025-06-01",
+    tracks: ["Speedway Arena", "Thunder Circuit", "Velocity Park"],
     drivers: [
       { id: "driver-1", name: "Max Power", totalPoints: 156, races: 8, wins: 3 },
       { id: "driver-2", name: "Lisa Speed", totalPoints: 142, races: 8, wins: 2 },
@@ -106,6 +94,7 @@ export const leagues: League[] = [
     name: "Rookie League",
     description: "A friendly league for newcomers to learn and compete.",
     createdAt: "2025-07-01",
+    tracks: ["Apex Karting"],
     drivers: [
       { id: "driver-6", name: "Anna First", totalPoints: 45, races: 3, wins: 1 },
       { id: "driver-7", name: "Ben Starter", totalPoints: 38, races: 3, wins: 1 },
@@ -130,6 +119,7 @@ export const leagues: League[] = [
     name: "Pro Circuit",
     description: "Competitive racing for experienced drivers. High stakes, big rewards.",
     createdAt: "2025-05-15",
+    tracks: ["Grand Prix Arena", "Champions Circuit"],
     drivers: [
       { id: "driver-9", name: "Victor Vroom", totalPoints: 210, races: 10, wins: 5 },
       { id: "driver-10", name: "Diana Dash", totalPoints: 195, races: 10, wins: 3 },
