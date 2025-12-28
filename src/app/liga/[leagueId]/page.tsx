@@ -168,7 +168,9 @@ export default function LeagueDetailPage() {
               {league.description}
             </p>
           </div>
-          <Button variant="outline">Edit League</Button>
+          <Button href={`/liga/${leagueId}/edit`} variant="outline">
+            Edit League
+          </Button>
         </div>
       </div>
 
@@ -180,8 +182,12 @@ export default function LeagueDetailPage() {
             <h2 className="text-xl font-semibold text-[var(--foreground)]">
               Driver Rankings
             </h2>
-            <Button variant="outline" size="sm">
-              Add Driver
+            <Button
+              href={`/liga/${leagueId}/drivers`}
+              variant="outline"
+              size="sm"
+            >
+              Manage Drivers
             </Button>
           </div>
 
@@ -237,7 +243,7 @@ export default function LeagueDetailPage() {
                   key={race.id}
                   className="bg-white rounded-xl p-4 border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-sm transition-all cursor-pointer"
                   onClick={() => {
-                    // TODO: Navigate to race detail page
+                    window.location.href = `/liga/${leagueId}/race/${race.id}`;
                   }}
                   role="button"
                   tabIndex={0}
@@ -245,7 +251,7 @@ export default function LeagueDetailPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      // TODO: Navigate to race detail page
+                      window.location.href = `/liga/${leagueId}/race/${race.id}`;
                     }
                   }}
                 >
