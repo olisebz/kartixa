@@ -97,7 +97,7 @@ export default function AboutPage() {
             {[25, 18, 15, 12, 10, 8, 6, 4, 2, 1].map((points, index) => (
               <div
                 key={index}
-                className="bg-white rounded-lg p-2 text-center border border-[var(--color-border)]"
+                className="bg-[var(--background)] rounded-lg p-2 text-center border border-[var(--color-border)]"
               >
                 <div className="text-xs text-[var(--color-muted)]">
                   P{index + 1}
@@ -121,7 +121,7 @@ export default function AboutPage() {
             {["Next.js", "TypeScript", "Tailwind CSS", "React"].map((tech) => (
               <span
                 key={tech}
-                className="px-3 py-1 bg-white rounded-full text-sm text-[var(--foreground)] border border-[var(--color-border)]"
+                className="px-3 py-1 bg-[var(--background)] rounded-full text-sm text-[var(--foreground)] border border-[var(--color-border)]"
               >
                 {tech}
               </span>
