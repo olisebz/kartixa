@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
@@ -15,6 +15,17 @@ import {
 import { getLeagueById, getSortedRankings } from "@/lib/mockData";
 import type { Driver } from "@/lib/mockData";
 
+// Medal lookup for rankings
+const medalIcons: Record<number, string> = {
+  1: "🥇 ",
+  2: "🥈 ",
+  3: "🥉 ",
+};
+
+function getRankDisplay(rank: number): string {
+  return medalIcons[rank] || String(rank);
+}
+
 // Driver Profile Modal
 function DriverModal({
   driver,
@@ -23,13 +34,37 @@ function DriverModal({
   driver: Driver;
   onClose: () => void;
 }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Focus management and scroll prevention
+  useEffect(() => {
+    const previousActiveElement = document.activeElement as HTMLElement;
+    modalRef.current?.focus();
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+      previousActiveElement?.focus();
+    };
+  }, []);
+
+  // Handle Escape key
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      onClose();
+    }
+  };
+
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={onClose}
+      onKeyDown={handleKeyDown}
       role="dialog"
       aria-modal="true"
       aria-labelledby="driver-modal-title"
+      tabIndex={-1}
     >
       <div
         className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
@@ -106,13 +141,16 @@ export default function LeagueDetailPage() {
   const leagueId = params.leagueId as string;
   const league = getLeagueById(leagueId);
 
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
-
   if (!league) {
     notFound();
   }
 
-  const sortedDrivers = getSortedRankings(league.drivers);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+
+  const sortedDrivers = useMemo(
+    () => getSortedRankings(league.drivers),
+    [league.drivers]
+  );
 
   return (
     <div className="py-8">
@@ -164,10 +202,7 @@ export default function LeagueDetailPage() {
                     onClick={() => setSelectedDriver(driver)}
                   >
                     <TableCell className="font-medium">
-                      {index + 1 === 1 && "🥇 "}
-                      {index + 1 === 2 && "🥈 "}
-                      {index + 1 === 3 && "🥉 "}
-                      {index + 1 > 3 && `${index + 1}`}
+                      {getRankDisplay(index + 1)}
                     </TableCell>
                     <TableCell className="font-medium">{driver.name}</TableCell>
                     <TableCell className="text-right font-semibold">
@@ -206,8 +241,10 @@ export default function LeagueDetailPage() {
                   }}
                   role="button"
                   tabIndex={0}
+                  aria-label={`View details for ${race.name}`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
                       // TODO: Navigate to race detail page
                     }
                   }}
