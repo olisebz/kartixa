@@ -1,16 +1,16 @@
 # 🏎️ Kartixa
 
-**Go-Kart Liga & Race Tracker**
+**Go-Kart League & Race Tracker**
 
-Kartixa ist eine Web-App zum Erstellen und Verwalten von Go-Kart-Ligen.
-Fahrer, Rennen und Punktestände werden übersichtlich dargestellt.
+Kartixa is a web app for creating and managing Go-Kart leagues.
+Drivers, races, and standings are displayed in a clear and organized way.
 
 ## ✨ Features
 
-- Ligen anlegen und anzeigen
-- Fahrer-Rankings mit Punktesystem
-- Rennen mit Strecken und Ergebnissen
-- Modernes, responsives UI
+- Create and view leagues
+- Driver rankings with point system
+- Races with tracks and results
+- Modern, responsive UI
 
 ## 🚀 Tech Stack
 
@@ -22,15 +22,15 @@ Fahrer, Rennen und Punktestände werden übersichtlich dargestellt.
 ## 🛠️ Development
 
 ```bash
-# Dependencies installieren
+# Install dependencies
 npm install
 
-# Development Server starten
+# Start development server
 npm run dev
 
-# Build erstellen
+# Create production build
 npm run build
 
-# Linting
+# Run linting
 npm run lint
 ```
