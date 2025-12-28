@@ -1,13 +1,21 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
+import Link from "next/link";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonBaseProps {
   variant?: "primary" | "secondary" | "outline";
   size?: "sm" | "md" | "lg";
+  href?: string;
 }
+
+type ButtonProps = ButtonBaseProps &
+  (
+    | (ButtonHTMLAttributes<HTMLButtonElement> & { href?: never })
+    | { href: string; children: React.ReactNode; className?: string }
+  );
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className = "", variant = "primary", size = "md", children, ...props },
+    { className = "", variant = "primary", size = "md", children, href, ...props },
     ref
   ) => {
     const baseStyles =
@@ -28,11 +36,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "px-7 py-3 text-lg",
     };
 
+    const combinedClassName = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
+
+    // Render as Link if href is provided
+    if (href) {
+      return (
+        <Link href={href} className={combinedClassName}>
+          {children}
+        </Link>
+      );
+    }
+
     return (
       <button
         ref={ref}
-        className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-        {...props}
+        className={combinedClassName}
+        {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         {children}
       </button>

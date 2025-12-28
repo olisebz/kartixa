@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
 import { leagues } from "@/lib/mockData";
@@ -22,9 +21,7 @@ export default function LigaPage() {
             Manage your Go-Kart leagues and track standings
           </p>
         </div>
-        <Link href="/liga/new">
-          <Button size="lg">Create New League</Button>
-        </Link>
+        <Button href="/liga/new" size="lg">Create New League</Button>
       </div>
 
       {/* League Cards Grid */}
@@ -47,9 +44,7 @@ export default function LigaPage() {
           <p className="text-[var(--color-muted)] text-lg mb-4">
             No leagues yet. Create your first league to get started!
           </p>
-          <Link href="/liga/new">
-            <Button>Create New League</Button>
-          </Link>
+          <Button href="/liga/new">Create New League</Button>
         </div>
       )}
     </div>
