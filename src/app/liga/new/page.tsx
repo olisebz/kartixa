@@ -27,6 +27,14 @@ export default function CreateLigaPage() {
     drivers: [{ id: `${baseId}-driver-0`, value: "" }] as ListItem[],
   });
 
+  const [errors, setErrors] = useState<{
+    name?: string;
+    drivers?: string;
+    tracks?: string;
+  }>({});
+
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const handleAddDriver = () => {
     setFormData((prev) => ({
       ...prev,
@@ -74,18 +82,65 @@ export default function CreateLigaPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate at least one driver and one track with non-empty values
-    const hasValidDriver = formData.drivers.some((d) => d.value.trim() !== "");
-    const hasValidTrack = formData.tracks.some((t) => t.value.trim() !== "");
+    const newErrors: typeof errors = {};
 
-    if (!hasValidDriver || !hasValidTrack) {
-      alert("Please add at least one driver and one track.");
+    if (!formData.name.trim()) {
+      newErrors.name = "League name is required";
+    }
+
+    const hasValidDriver = formData.drivers.some((d) => d.value.trim() !== "");
+    if (!hasValidDriver) {
+      newErrors.drivers = "At least one driver is required";
+    }
+
+    const hasValidTrack = formData.tracks.some((t) => t.value.trim() !== "");
+    if (!hasValidTrack) {
+      newErrors.tracks = "At least one track is required";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
-    // Phase 1: UI only - no actual submission
-    alert("League created! (Demo - no data saved)");
+    setShowSuccess(true);
   };
+
+  if (showSuccess) {
+    return (
+      <div className="py-8 max-w-2xl mx-auto text-center">
+        <div className="bg-[var(--color-card)] rounded-2xl p-8">
+          <div className="text-6xl mb-4">🏁</div>
+          <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+            League Created!
+          </h1>
+          <p className="text-[var(--color-muted)] mb-6">
+            Your new league has been set up successfully.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button href="/liga">View Leagues</Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowSuccess(false);
+                setFormData({
+                  name: "",
+                  description: "",
+                  tracks: [{ id: `${baseId}-track-0`, value: "" }],
+                  drivers: [{ id: `${baseId}-driver-0`, value: "" }],
+                });
+                setErrors({});
+                setNextId(1);
+              }}
+            >
+              Create Another
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 max-w-2xl mx-auto">
@@ -116,6 +171,7 @@ export default function CreateLigaPage() {
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, name: e.target.value }))
             }
+            error={errors.name}
             required
           />
           <Textarea
@@ -144,6 +200,9 @@ export default function CreateLigaPage() {
               + Add Driver
             </Button>
           </div>
+          {errors.drivers && (
+            <p className="text-sm text-red-500">{errors.drivers}</p>
+          )}
           <div className="space-y-3">
             {formData.drivers.map((driver, index) => (
               <div key={driver.id} className="flex gap-2">
@@ -187,6 +246,9 @@ export default function CreateLigaPage() {
               + Add Track
             </Button>
           </div>
+          {errors.tracks && (
+            <p className="text-sm text-red-500">{errors.tracks}</p>
+          )}
           <p className="text-sm text-[var(--color-muted)]">
             Add the tracks where races will be held
           </p>

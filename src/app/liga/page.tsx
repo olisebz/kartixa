@@ -11,7 +11,6 @@ export const metadata: Metadata = {
 export default function LigaPage() {
   return (
     <div className="py-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[var(--foreground)]">
@@ -21,10 +20,11 @@ export default function LigaPage() {
             Manage your Go-Kart leagues and track standings
           </p>
         </div>
-        <Button href="/liga/new" size="lg">Create New League</Button>
+        <Button href="/liga/new" size="lg">
+          Create New League
+        </Button>
       </div>
 
-      {/* League Cards Grid */}
       {leagues.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {leagues.map((league) => (
