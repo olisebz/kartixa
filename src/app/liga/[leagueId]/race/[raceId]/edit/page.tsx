@@ -57,6 +57,9 @@ export default function EditRacePage() {
 
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Delete notification state
+  const [showDeleteNotice, setShowDeleteNotice] = useState(false);
+
   // Get available drivers (not yet in results)
   const availableDrivers = useMemo(() => {
     const usedDriverIds = new Set(results.map((r) => r.driverId));
@@ -439,11 +442,17 @@ export default function EditRacePage() {
             Deleting a race will permanently remove all results. This cannot be
             undone.
           </p>
+          {showDeleteNotice && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+              ℹ️ Delete functionality will be available in Phase 2 when data
+              persistence is implemented.
+            </div>
+          )}
           <Button
             type="button"
             variant="outline"
             className="border-red-300 text-red-600 hover:bg-red-100"
-            onClick={() => alert("Delete will be available in Phase 2")}
+            onClick={() => setShowDeleteNotice(true)}
           >
             Delete Race
           </Button>

@@ -43,6 +43,15 @@ export default function DriversPage() {
   // Success message
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Error message for edit modal
+  const [editError, setEditError] = useState("");
+
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<Driver | null>(null);
+
+  // Error message for delete
+  const [deleteError, setDeleteError] = useState("");
+
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(""), 3000);
@@ -94,7 +103,7 @@ export default function DriversPage() {
           d.name.toLowerCase() === editName.trim().toLowerCase()
       )
     ) {
-      alert("A driver with this name already exists");
+      setEditError("A driver with this name already exists");
       return;
     }
 
@@ -106,20 +115,26 @@ export default function DriversPage() {
     showSuccess(`Driver renamed to ${editName.trim()}`);
     setEditingDriver(null);
     setEditName("");
+    setEditError("");
   };
 
   const handleDeleteDriver = (driver: Driver) => {
     if (driver.races > 0) {
-      alert(
-        "Cannot delete a driver who has participated in races. This would affect race history."
+      setDeleteError(
+        `Cannot delete ${driver.name} because they have participated in ${driver.races} race(s). This would affect race history.`
       );
+      setTimeout(() => setDeleteError(""), 5000);
       return;
     }
 
-    if (confirm(`Are you sure you want to remove ${driver.name}?`)) {
-      setDrivers(drivers.filter((d) => d.id !== driver.id));
-      showSuccess(`${driver.name} has been removed`);
-    }
+    setDeleteConfirm(driver);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+    setDrivers(drivers.filter((d) => d.id !== deleteConfirm.id));
+    showSuccess(`${deleteConfirm.name} has been removed`);
+    setDeleteConfirm(null);
   };
 
   // Sort drivers by points
@@ -157,6 +172,56 @@ export default function DriversPage() {
       {successMessage && (
         <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 text-green-700">
           ✓ {successMessage}
+        </div>
+      )}
+
+      {/* Delete Error Message */}
+      {deleteError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+          ✕ {deleteError}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setDeleteConfirm(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="delete-confirm-title"
+              className="text-2xl font-bold text-[var(--foreground)] mb-4"
+            >
+              Delete Driver?
+            </h2>
+            <p className="text-[var(--color-muted)] mb-6">
+              Are you sure you want to remove{" "}
+              <strong>{deleteConfirm.name}</strong> from this league? This
+              action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setDeleteConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-[var(--color-delete)] hover:bg-red-700"
+                onClick={confirmDelete}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -329,8 +394,12 @@ export default function DriversPage() {
             <Input
               label="Driver Name"
               value={editName}
-              onChange={(e) => setEditName(e.target.value)}
+              onChange={(e) => {
+                setEditName(e.target.value);
+                setEditError("");
+              }}
               placeholder="Enter driver name"
+              error={editError}
             />
 
             <div className="mt-4 p-4 bg-[var(--color-card)] rounded-xl">
