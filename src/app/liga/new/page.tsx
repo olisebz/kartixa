@@ -131,6 +131,7 @@ export default function CreateLigaPage() {
                   drivers: [{ id: `${baseId}-driver-0`, value: "" }],
                 });
                 setErrors({});
+                setNextId(1);
               }}
             >
               Create Another

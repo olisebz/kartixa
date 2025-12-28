@@ -63,6 +63,7 @@ export default function Modal({
             {title}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-[var(--color-muted)] hover:text-[var(--foreground)] text-2xl"
             aria-label="Close modal"
