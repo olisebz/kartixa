@@ -77,9 +77,19 @@ export default function NewRacePage() {
     field: keyof RaceResultEntry,
     value: string | number | boolean
   ) => {
-    setResults(
-      results.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
+    // Ensure only one driver can have fastest lap
+    if (field === "fastestLap" && value === true) {
+      setResults(
+        results.map((r) => ({
+          ...r,
+          fastestLap: r.id === id,
+        }))
+      );
+    } else {
+      setResults(
+        results.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+      );
+    }
   };
 
   const removeResult = (id: string) => {
@@ -124,6 +134,8 @@ export default function NewRacePage() {
       newErrors.results = "At least one race result is required";
     } else if (results.some((r) => !r.driverId)) {
       newErrors.results = "All result entries must have a driver selected";
+    } else if (results.filter((r) => r.fastestLap).length > 1) {
+      newErrors.results = "Only one driver can have the fastest lap";
     }
 
     setErrors(newErrors);
@@ -144,24 +156,67 @@ export default function NewRacePage() {
       date,
       results: results.map((r) => {
         const driver = league.drivers.find((d) => d.id === r.driverId);
+        const basePoints = pointsSystem[r.position] || 0;
+        // Fastest lap bonus: +1 point if in top 10
+        const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
         return {
           driverId: r.driverId,
           driverName: driver?.name || "",
           position: r.position,
-          points: pointsSystem[r.position] || 0,
+          points: basePoints + fastestLapBonus,
           fastestLap: r.fastestLap,
         };
       }),
     };
 
-    // In Phase 1, just log the data
-    console.log("Race created:", raceData);
-    alert("Race created successfully! (Data logged to console)");
+    // For now, just show success message
+    setShowSuccess(true);
+    // Store for potential use
+    void raceData;
   };
 
-  // Calculate points preview
-  const getPointsForPosition = (position: number) =>
-    pointsSystem[position] || 0;
+  // Calculate points including fastest lap bonus
+  const getPointsWithBonus = (position: number, hasFastestLap: boolean) => {
+    const basePoints = pointsSystem[position] || 0;
+    const bonus = hasFastestLap && position <= 10 ? 1 : 0;
+    return basePoints + bonus;
+  };
+
+  // Success state for Phase 1
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Success message UI
+  if (showSuccess) {
+    return (
+      <div className="py-8 max-w-2xl mx-auto text-center">
+        <div className="bg-[var(--color-card)] rounded-2xl p-8">
+          <div className="text-6xl mb-4">🏁</div>
+          <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+            Race Created!
+          </h1>
+          <p className="text-[var(--color-muted)] mb-6">
+            The race has been successfully recorded.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button href={`/liga/${leagueId}`} variant="secondary">
+              Back to League
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSuccess(false);
+                setRaceName("");
+                setTrack("");
+                setCustomTrack("");
+                setResults([]);
+              }}
+            >
+              Add Another Race
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 max-w-2xl mx-auto">
@@ -225,6 +280,7 @@ export default function NewRacePage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
               required
             />
           </div>
@@ -280,9 +336,17 @@ export default function NewRacePage() {
                             ? "bg-amber-700"
                             : "bg-[var(--color-primary)]"
                         }`}
+                        aria-label={`Position ${result.position}`}
                       >
                         {result.position}
                       </div>
+                      {result.position <= 3 && (
+                        <span className="text-xs text-[var(--color-muted)]">
+                          {result.position === 1 && "1st"}
+                          {result.position === 2 && "2nd"}
+                          {result.position === 3 && "3rd"}
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => moveResult(result.id, "down")}
@@ -321,7 +385,7 @@ export default function NewRacePage() {
                     {/* Points Preview */}
                     <div className="text-center min-w-[60px]">
                       <div className="text-lg font-bold text-[var(--color-primary)]">
-                        {getPointsForPosition(result.position)}
+                        {getPointsWithBonus(result.position, result.fastestLap)}
                       </div>
                       <div className="text-xs text-[var(--color-muted)]">
                         points
@@ -329,7 +393,10 @@ export default function NewRacePage() {
                     </div>
 
                     {/* Fastest Lap */}
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      className="flex items-center gap-2 cursor-pointer"
+                      title="Fastest Lap"
+                    >
                       <input
                         type="checkbox"
                         checked={result.fastestLap}
@@ -341,8 +408,12 @@ export default function NewRacePage() {
                           )
                         }
                         className="w-4 h-4 accent-[var(--color-primary)]"
+                        aria-label="Fastest lap"
                       />
-                      <span className="text-sm">🏎️</span>
+                      <span className="text-sm" aria-hidden="true">
+                        🏎️
+                      </span>
+                      <span className="sr-only">Fastest lap</span>
                     </label>
 
                     {/* Remove */}
