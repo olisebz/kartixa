@@ -4,6 +4,7 @@ import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 import Input from "@/components/forms/Input";
 import {
   Table,
@@ -182,48 +183,33 @@ export default function DriversPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setDeleteConfirm(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-confirm-title"
-        >
-          <div
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2
-              id="delete-confirm-title"
-              className="text-2xl font-bold text-[var(--foreground)] mb-4"
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete Driver?"
+        footer={
+          <div className="flex gap-4">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setDeleteConfirm(null)}
             >
-              Delete Driver?
-            </h2>
-            <p className="text-[var(--color-muted)] mb-6">
-              Are you sure you want to remove{" "}
-              <strong>{deleteConfirm.name}</strong> from this league? This
-              action cannot be undone.
-            </p>
-            <div className="flex gap-4">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setDeleteConfirm(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-[var(--color-delete)] hover:bg-red-700"
-                onClick={confirmDelete}
-              >
-                Delete
-              </Button>
-            </div>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 bg-[var(--color-delete)] hover:bg-red-700"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-[var(--color-muted)]">
+          Are you sure you want to remove <strong>{deleteConfirm?.name}</strong>{" "}
+          from this league? This action cannot be undone.
+        </p>
+      </Modal>
 
       {/* Add Driver Form */}
       {showAddForm && (
@@ -371,71 +357,55 @@ export default function DriversPage() {
         </div>
       )}
 
-      {/* Edit Driver Modal */}
-      {editingDriver && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setEditingDriver(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-driver-title"
-        >
-          <div
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2
-              id="edit-driver-title"
-              className="text-2xl font-bold text-[var(--foreground)] mb-4"
+      <Modal
+        isOpen={!!editingDriver}
+        onClose={() => setEditingDriver(null)}
+        title="Edit Driver"
+        footer={
+          <div className="flex gap-4">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setEditingDriver(null)}
             >
-              Edit Driver
-            </h2>
+              Cancel
+            </Button>
+            <Button className="flex-1" onClick={handleSaveEdit}>
+              Save
+            </Button>
+          </div>
+        }
+      >
+        <Input
+          label="Driver Name"
+          value={editName}
+          onChange={(e) => {
+            setEditName(e.target.value);
+            setEditError("");
+          }}
+          placeholder="Enter driver name"
+          error={editError}
+        />
 
-            <Input
-              label="Driver Name"
-              value={editName}
-              onChange={(e) => {
-                setEditName(e.target.value);
-                setEditError("");
-              }}
-              placeholder="Enter driver name"
-              error={editError}
-            />
-
-            <div className="mt-4 p-4 bg-[var(--color-card)] rounded-xl">
-              <div className="text-sm text-[var(--color-muted)] space-y-1">
-                <div className="flex justify-between">
-                  <span>Total Points:</span>
-                  <span className="font-medium">
-                    {editingDriver.totalPoints}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Races:</span>
-                  <span className="font-medium">{editingDriver.races}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Wins:</span>
-                  <span className="font-medium">{editingDriver.wins}</span>
-                </div>
+        {editingDriver && (
+          <div className="mt-4 p-4 bg-[var(--color-card)] rounded-xl">
+            <div className="text-sm text-[var(--color-muted)] space-y-1">
+              <div className="flex justify-between">
+                <span>Total Points:</span>
+                <span className="font-medium">{editingDriver.totalPoints}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Races:</span>
+                <span className="font-medium">{editingDriver.races}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Wins:</span>
+                <span className="font-medium">{editingDriver.wins}</span>
               </div>
             </div>
-
-            <div className="flex gap-4 mt-6">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setEditingDriver(null)}
-              >
-                Cancel
-              </Button>
-              <Button className="flex-1" onClick={handleSaveEdit}>
-                Save
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

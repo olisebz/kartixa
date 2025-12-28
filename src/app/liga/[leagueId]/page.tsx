@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 import {
   Table,
   TableHeader,
@@ -15,122 +16,55 @@ import {
 import { getLeagueById, getSortedRankings } from "@/lib/mockData";
 import type { Driver } from "@/lib/mockData";
 
-// Medal lookup for rankings
-const medalIcons: Record<number, string> = {
+const MEDAL_ICONS: Record<number, string> = {
   1: "🥇 ",
   2: "🥈 ",
   3: "🥉 ",
 };
 
 function getRankDisplay(rank: number): string {
-  return medalIcons[rank] || String(rank);
+  return MEDAL_ICONS[rank] || String(rank);
 }
 
-// Driver Profile Modal
-function DriverModal({
-  driver,
-  onClose,
-}: {
-  driver: Driver;
-  onClose: () => void;
-}) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Focus management and scroll prevention
-  useEffect(() => {
-    const previousActiveElement = document.activeElement as HTMLElement;
-    modalRef.current?.focus();
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = "";
-      previousActiveElement?.focus();
-    };
-  }, []);
-
-  // Handle Escape key
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      onClose();
-    }
-  };
-
+function DriverStats({ driver }: { driver: Driver }) {
   return (
-    <div
-      ref={modalRef}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-      onKeyDown={handleKeyDown}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="driver-modal-title"
-      tabIndex={-1}
-    >
-      <div
-        className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <h2
-            id="driver-modal-title"
-            className="text-2xl font-bold text-[var(--foreground)]"
-          >
-            {driver.name}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-[var(--color-muted)] hover:text-[var(--foreground)] text-2xl"
-            aria-label="Close modal"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold text-[var(--color-primary)]">
-                {driver.totalPoints}
-              </div>
-              <div className="text-sm text-[var(--color-muted)]">
-                Total Points
-              </div>
-            </div>
-            <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-              <div className="text-3xl font-bold text-[var(--color-primary)]">
-                {driver.wins}
-              </div>
-              <div className="text-sm text-[var(--color-muted)]">Wins</div>
-            </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-[var(--color-primary)]">
+            {driver.totalPoints}
           </div>
-
-          <div className="bg-[var(--color-card)] rounded-xl p-4">
-            <div className="flex justify-between items-center">
-              <span className="text-[var(--color-muted)]">Races Started</span>
-              <span className="font-semibold">{driver.races}</span>
-            </div>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-[var(--color-muted)]">Win Rate</span>
-              <span className="font-semibold">
-                {driver.races > 0
-                  ? `${Math.round((driver.wins / driver.races) * 100)}%`
-                  : "0%"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-[var(--color-muted)]">Avg Points/Race</span>
-              <span className="font-semibold">
-                {driver.races > 0
-                  ? (driver.totalPoints / driver.races).toFixed(1)
-                  : "0"}
-              </span>
-            </div>
-          </div>
+          <div className="text-sm text-[var(--color-muted)]">Total Points</div>
         </div>
+        <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-[var(--color-primary)]">
+            {driver.wins}
+          </div>
+          <div className="text-sm text-[var(--color-muted)]">Wins</div>
+        </div>
+      </div>
 
-        <Button onClick={onClose} className="w-full mt-6">
-          Close
-        </Button>
+      <div className="bg-[var(--color-card)] rounded-xl p-4">
+        <div className="flex justify-between items-center">
+          <span className="text-[var(--color-muted)]">Races Started</span>
+          <span className="font-semibold">{driver.races}</span>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-[var(--color-muted)]">Win Rate</span>
+          <span className="font-semibold">
+            {driver.races > 0
+              ? `${Math.round((driver.wins / driver.races) * 100)}%`
+              : "0%"}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-[var(--color-muted)]">Avg Points/Race</span>
+          <span className="font-semibold">
+            {driver.races > 0
+              ? (driver.totalPoints / driver.races).toFixed(1)
+              : "0"}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -299,13 +233,18 @@ export default function LeagueDetailPage() {
         </div>
       </div>
 
-      {/* Driver Modal */}
-      {selectedDriver && (
-        <DriverModal
-          driver={selectedDriver}
-          onClose={() => setSelectedDriver(null)}
-        />
-      )}
+      <Modal
+        isOpen={!!selectedDriver}
+        onClose={() => setSelectedDriver(null)}
+        title={selectedDriver?.name || ""}
+        footer={
+          <Button onClick={() => setSelectedDriver(null)} className="w-full">
+            Close
+          </Button>
+        }
+      >
+        {selectedDriver && <DriverStats driver={selectedDriver} />}
+      </Modal>
     </div>
   );
 }
