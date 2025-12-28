@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
 import {
@@ -138,6 +138,7 @@ function DriverModal({
 
 export default function LeagueDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const leagueId = params.leagueId as string;
   const league = getLeagueById(leagueId);
 
@@ -168,7 +169,9 @@ export default function LeagueDetailPage() {
               {league.description}
             </p>
           </div>
-          <Button variant="outline">Edit League</Button>
+          <Button href={`/liga/${leagueId}/edit`} variant="outline">
+            Edit League
+          </Button>
         </div>
       </div>
 
@@ -180,8 +183,12 @@ export default function LeagueDetailPage() {
             <h2 className="text-xl font-semibold text-[var(--foreground)]">
               Driver Rankings
             </h2>
-            <Button variant="outline" size="sm">
-              Add Driver
+            <Button
+              href={`/liga/${leagueId}/drivers`}
+              variant="outline"
+              size="sm"
+            >
+              Manage Drivers
             </Button>
           </div>
 
@@ -232,54 +239,57 @@ export default function LeagueDetailPage() {
 
           {league.races.length > 0 ? (
             <div className="space-y-3">
-              {league.races.map((race) => (
-                <div
-                  key={race.id}
-                  className="bg-white rounded-xl p-4 border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-sm transition-all cursor-pointer"
-                  onClick={() => {
-                    // TODO: Navigate to race detail page
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`View details for ${race.name}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      // TODO: Navigate to race detail page
-                    }
-                  }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-[var(--foreground)]">
-                        {race.name}
-                      </h3>
-                      <p className="text-sm text-[var(--color-muted)]">
-                        {race.track}
-                      </p>
-                    </div>
-                    <span className="text-sm text-[var(--color-muted)]">
-                      {new Date(race.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  {race.results.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-[var(--color-muted)]">
-                          Winner:
-                        </span>
-                        <span className="font-medium">
-                          🏆 {race.results[0].driverName}
-                        </span>
+              {league.races.map((race) => {
+                const navigateToRace = () => {
+                  router.push(`/liga/${leagueId}/race/${race.id}`);
+                };
+                return (
+                  <div
+                    key={race.id}
+                    className="bg-white rounded-xl p-4 border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:shadow-sm transition-all cursor-pointer"
+                    onClick={navigateToRace}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View details for ${race.name}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigateToRace();
+                      }
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-[var(--foreground)]">
+                          {race.name}
+                        </h3>
+                        <p className="text-sm text-[var(--color-muted)]">
+                          {race.track}
+                        </p>
                       </div>
+                      <span className="text-sm text-[var(--color-muted)]">
+                        {new Date(race.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {race.results.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-[var(--color-muted)]">
+                            Winner:
+                          </span>
+                          <span className="font-medium">
+                            🏆 {race.results[0].driverName}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-[var(--color-muted)] text-center py-8">
