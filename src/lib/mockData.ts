@@ -13,6 +13,7 @@ export interface RaceResult {
   driverName: string;
   position: number;
   points: number;
+  lapTime?: string; // Format: "MM:SS.mmm" (e.g., "01:23.456")
   fastestLap?: boolean;
 }
 
@@ -56,11 +57,11 @@ export const leagues: League[] = [
         track: "Speedway Arena",
         date: "2025-06-15",
         results: [
-          { driverId: "driver-1", driverName: "Max Power", position: 1, points: 25, fastestLap: true },
-          { driverId: "driver-2", driverName: "Lisa Speed", position: 2, points: 18 },
-          { driverId: "driver-3", driverName: "Tom Turbo", position: 3, points: 15 },
-          { driverId: "driver-4", driverName: "Sarah Swift", position: 4, points: 12 },
-          { driverId: "driver-5", driverName: "Mike Drift", position: 5, points: 10 },
+          { driverId: "driver-1", driverName: "Max Power", position: 1, points: 25, lapTime: "01:23.456", fastestLap: true },
+          { driverId: "driver-2", driverName: "Lisa Speed", position: 2, points: 18, lapTime: "01:24.123" },
+          { driverId: "driver-3", driverName: "Tom Turbo", position: 3, points: 15, lapTime: "01:24.789" },
+          { driverId: "driver-4", driverName: "Sarah Swift", position: 4, points: 12, lapTime: "01:25.234" },
+          { driverId: "driver-5", driverName: "Mike Drift", position: 5, points: 10, lapTime: "01:26.012" },
         ],
       },
       {
@@ -69,10 +70,10 @@ export const leagues: League[] = [
         track: "Thunder Circuit",
         date: "2025-06-22",
         results: [
-          { driverId: "driver-2", driverName: "Lisa Speed", position: 1, points: 25, fastestLap: true },
-          { driverId: "driver-1", driverName: "Max Power", position: 2, points: 18 },
-          { driverId: "driver-4", driverName: "Sarah Swift", position: 3, points: 15 },
-          { driverId: "driver-3", driverName: "Tom Turbo", position: 4, points: 12 },
+          { driverId: "driver-2", driverName: "Lisa Speed", position: 1, points: 25, lapTime: "01:22.987", fastestLap: true },
+          { driverId: "driver-1", driverName: "Max Power", position: 2, points: 18, lapTime: "01:23.345" },
+          { driverId: "driver-4", driverName: "Sarah Swift", position: 3, points: 15, lapTime: "01:24.567" },
+          { driverId: "driver-3", driverName: "Tom Turbo", position: 4, points: 12, lapTime: "01:25.123" },
         ],
       },
       {
@@ -81,10 +82,10 @@ export const leagues: League[] = [
         track: "Velocity Park",
         date: "2025-06-29",
         results: [
-          { driverId: "driver-3", driverName: "Tom Turbo", position: 1, points: 25 },
-          { driverId: "driver-1", driverName: "Max Power", position: 2, points: 18, fastestLap: true },
-          { driverId: "driver-2", driverName: "Lisa Speed", position: 3, points: 15 },
-          { driverId: "driver-4", driverName: "Sarah Swift", position: 4, points: 12 },
+          { driverId: "driver-3", driverName: "Tom Turbo", position: 1, points: 25, lapTime: "01:24.234" },
+          { driverId: "driver-1", driverName: "Max Power", position: 2, points: 18, lapTime: "01:23.678", fastestLap: true },
+          { driverId: "driver-2", driverName: "Lisa Speed", position: 3, points: 15, lapTime: "01:25.012" },
+          { driverId: "driver-4", driverName: "Sarah Swift", position: 4, points: 12, lapTime: "01:25.890" },
         ],
       },
     ],
@@ -107,9 +108,9 @@ export const leagues: League[] = [
         track: "Apex Karting",
         date: "2025-07-05",
         results: [
-          { driverId: "driver-6", driverName: "Anna First", position: 1, points: 25 },
-          { driverId: "driver-7", driverName: "Ben Starter", position: 2, points: 18 },
-          { driverId: "driver-8", driverName: "Clara New", position: 3, points: 15 },
+          { driverId: "driver-6", driverName: "Anna First", position: 1, points: 25, lapTime: "01:28.456" },
+          { driverId: "driver-7", driverName: "Ben Starter", position: 2, points: 18, lapTime: "01:29.234" },
+          { driverId: "driver-8", driverName: "Clara New", position: 3, points: 15, lapTime: "01:30.012" },
         ],
       },
     ],

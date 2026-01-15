@@ -12,6 +12,7 @@ interface RaceResultEntry {
   id: string;
   driverId: string;
   position: number;
+  lapTime: string;
   fastestLap: boolean;
 }
 
@@ -66,6 +67,7 @@ export default function NewRacePage() {
         id: `${baseId}-result-${resultIdCounter}`,
         driverId: "",
         position: newPosition,
+        lapTime: "",
         fastestLap: false,
       },
     ]);
@@ -164,6 +166,7 @@ export default function NewRacePage() {
           driverName: driver?.name || "",
           position: r.position,
           points: basePoints + fastestLapBonus,
+          lapTime: r.lapTime || undefined,
           fastestLap: r.fastestLap,
         };
       }),
@@ -379,6 +382,20 @@ export default function NewRacePage() {
                                 .map((d) => ({ value: d.id, label: d.name }))
                             : []),
                         ]}
+                      />
+                    </div>
+
+                    {/* Lap Time Input */}
+                    <div className="min-w-[120px]">
+                      <Input
+                        label=""
+                        type="text"
+                        value={result.lapTime}
+                        onChange={(e) =>
+                          updateResult(result.id, "lapTime", e.target.value)
+                        }
+                        placeholder="01:23.456"
+                        className="text-center font-mono"
                       />
                     </div>
 

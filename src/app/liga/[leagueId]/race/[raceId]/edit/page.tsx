@@ -12,6 +12,7 @@ interface RaceResultEntry {
   id: string;
   driverId: string;
   position: number;
+  lapTime: string;
   fastestLap: boolean;
 }
 
@@ -44,6 +45,7 @@ export default function EditRacePage() {
       id: `${baseId}-result-${index}`,
       driverId: r.driverId,
       position: r.position,
+      lapTime: r.lapTime || "",
       fastestLap: r.fastestLap || false,
     }))
   );
@@ -82,6 +84,7 @@ export default function EditRacePage() {
       {
         id: `${baseId}-result-${resultIdCounter}`,
         driverId: "",
+        lapTime: "",
         position: newPosition,
         fastestLap: false,
       },
@@ -177,6 +180,7 @@ export default function EditRacePage() {
           driverId: r.driverId,
           driverName: driver?.name || "",
           position: r.position,
+          lapTime: r.lapTime || undefined,
           points: basePoints + fastestLapBonus,
           fastestLap: r.fastestLap,
         };
@@ -376,6 +380,20 @@ export default function EditRacePage() {
                                 .map((d) => ({ value: d.id, label: d.name }))
                             : []),
                         ]}
+                      />
+                    </div>
+
+                    {/* Lap Time Input */}
+                    <div className="min-w-[120px]">
+                      <Input
+                        label=""
+                        type="text"
+                        value={result.lapTime}
+                        onChange={(e) =>
+                          updateResult(result.id, "lapTime", e.target.value)
+                        }
+                        placeholder="01:23.456"
+                        className="text-center font-mono"
                       />
                     </div>
 

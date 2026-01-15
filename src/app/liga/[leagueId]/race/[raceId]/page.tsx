@@ -109,6 +109,7 @@ export default function RaceDetailPage() {
               <TableRow>
                 <TableHead className="w-20">Position</TableHead>
                 <TableHead>Driver</TableHead>
+                <TableHead className="text-right">Lap Time</TableHead>
                 <TableHead className="text-right">Points</TableHead>
                 <TableHead className="w-24 text-center">Fastest Lap</TableHead>
               </TableRow>
@@ -136,6 +137,9 @@ export default function RaceDetailPage() {
                   <TableCell className="font-medium">
                     {result.driverName}
                     {result.position === 1 && " 🏆"}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-[var(--color-primary)]">
+                    {result.lapTime || "-"}
                   </TableCell>
                   <TableCell className="text-right font-semibold">
                     {result.points}
