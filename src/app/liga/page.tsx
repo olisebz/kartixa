@@ -1,5 +1,6 @@
 import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
+import FeedbackPopup from "@/components/FeedbackPopup";
 import { leagues } from "@/lib/mockData";
 import type { Metadata } from "next";
 
@@ -47,6 +48,8 @@ export default function LigaPage() {
           <Button href="/liga/new">Create New League</Button>
         </div>
       )}
+
+      <FeedbackPopup />
     </div>
   );
 }
