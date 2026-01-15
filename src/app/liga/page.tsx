@@ -1,6 +1,7 @@
 import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
 import FeedbackPopup from "@/components/FeedbackPopup";
+import { OnboardingButton } from "@/components/Onboarding";
 import { leagues } from "@/lib/mockData";
 import type { Metadata } from "next";
 
@@ -21,9 +22,12 @@ export default function LigaPage() {
             Manage your Go-Kart leagues and track standings
           </p>
         </div>
-        <Button href="/liga/new" size="lg">
-          Create New League
-        </Button>
+        <div className="flex items-center gap-3">
+          <OnboardingButton />
+          <Button href="/liga/new" size="lg">
+            Create New League
+          </Button>
+        </div>
       </div>
 
       {leagues.length > 0 ? (
