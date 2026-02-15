@@ -34,3 +34,12 @@ npm run build
 # Run linting
 npm run lint
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Credits
+
+- **Icons:** [Lucide Icons](https://lucide.dev) (ISC License)
+- **Fonts:** [Geist](https://vercel.com/font) (SIL Open Font License)

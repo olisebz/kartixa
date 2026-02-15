@@ -12,7 +12,7 @@ interface OnboardingStep {
 
 const steps: OnboardingStep[] = [
   {
-    title: "Welcome to Kartixa! 🏁",
+    title: "Welcome to Kartixa!",
     description:
       "Your ultimate Go-Kart league management system. Track races, manage drivers, and keep standings all in one place.",
     icon: "🎯",
@@ -150,7 +150,6 @@ export function OnboardingButton() {
         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-card)] hover:bg-[var(--color-card-hover)] text-[var(--foreground)] transition-colors duration-200 border border-[var(--color-border)]"
         aria-label="Start onboarding tutorial"
       >
-        <span className="text-xl">📖</span>
         <span className="font-medium">Quick Start Guide</span>
       </button>
 
