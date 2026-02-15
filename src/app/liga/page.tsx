@@ -1,6 +1,5 @@
 import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
-import FeedbackPopup from "@/components/FeedbackPopup";
 import { OnboardingButton } from "@/components/Onboarding";
 import { leagues } from "@/lib/mockData";
 import type { Metadata } from "next";
@@ -37,9 +36,9 @@ export default function LigaPage() {
               <CardTitle>{league.name}</CardTitle>
               <CardDescription>{league.description}</CardDescription>
               <div className="mt-4 flex items-center gap-4 text-sm text-[var(--color-muted)]">
-                <span>{league.drivers.length} Drivers</span>
+                <span>{league.seasons.reduce((acc, s) => acc + s.drivers.length, 0)} Drivers</span>
                 <span>•</span>
-                <span>{league.races.length} Races</span>
+                <span>{league.seasons.reduce((acc, s) => acc + s.races.length, 0)} Races</span>
               </div>
             </Card>
           ))}
@@ -53,7 +52,6 @@ export default function LigaPage() {
         </div>
       )}
 
-      <FeedbackPopup />
     </div>
   );
 }
