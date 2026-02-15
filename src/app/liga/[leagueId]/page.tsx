@@ -76,16 +76,35 @@ export default function LeagueDetailPage() {
   const leagueId = params.leagueId as string;
   const league = getLeagueById(leagueId);
 
+  // Initialize state with the most recent season (assuming last in array is newest)
+  // In a real app, you might want to sort by startDate or use an 'isActive' flag
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
+    league?.seasons[league.seasons.length - 1]?.id || ""
+  );
+
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+
   if (!league) {
     notFound();
   }
 
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const currentSeason = league.seasons.find((s) => s.id === selectedSeasonId);
 
   const sortedDrivers = useMemo(
-    () => getSortedRankings(league.drivers),
-    [league.drivers]
+    () => (currentSeason ? getSortedRankings(currentSeason.drivers) : []),
+    [currentSeason]
   );
+
+  const handleCreateSeason = () => {
+    // In a real app, this would be an API call
+    // For now, we'll just alert the user as we can't easily mutate the mock data 
+    // consistently across re-renders without a proper state management or backend
+    alert("This would create a new season starting with 0 points for all drivers!");
+  };
+
+  if (!currentSeason) {
+    return <div className="p-8 text-center">Season not found</div>
+  }
 
   return (
     <div className="py-8">
@@ -94,7 +113,7 @@ export default function LeagueDetailPage() {
         <Button href="/liga" variant="secondary" size="sm" className="mb-4">
           ← Back to Leagues
         </Button>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--foreground)]">
               {league.name}
@@ -103,10 +122,38 @@ export default function LeagueDetailPage() {
               {league.description}
             </p>
           </div>
-          <Button href={`/liga/${leagueId}/edit`} variant="outline">
-            Edit League
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button href={`/liga/${leagueId}/edit`} variant="outline">
+              Edit League
+            </Button>
+            <Button onClick={handleCreateSeason} size="sm">
+              Start New Season
+            </Button>
+          </div>
+
         </div>
+      </div>
+
+      {/* Season Selector */}
+      <div className="mb-8 flex items-center gap-4">
+        <label htmlFor="season-select" className="font-medium text-[var(--foreground)]">
+          Season:
+        </label>
+        <select
+          id="season-select"
+          value={selectedSeasonId}
+          onChange={(e) => setSelectedSeasonId(e.target.value)}
+          className="bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+        >
+          {league.seasons.map((season) => (
+            <option key={season.id} value={season.id}>
+              {season.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-sm text-[var(--color-muted)]">
+          {new Date(currentSeason.startDate).getFullYear()}
+        </span>
       </div>
 
       {/* Main Content - Two Columns on Desktop */}
@@ -171,9 +218,9 @@ export default function LeagueDetailPage() {
             </Button>
           </div>
 
-          {league.races.length > 0 ? (
+          {currentSeason.races.length > 0 ? (
             <div className="space-y-3">
-              {league.races.map((race) => {
+              {currentSeason.races.map((race) => {
                 const navigateToRace = () => {
                   router.push(`/liga/${leagueId}/race/${race.id}`);
                 };
