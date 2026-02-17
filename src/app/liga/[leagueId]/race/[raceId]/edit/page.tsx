@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
-import { getLeagueById, getRaceById, pointsSystem } from "@/lib/mockData";
+import { getLeagueById, getRaceById, POINTS_SYSTEM } from "@/lib/mockData";
 
 interface RaceResultEntry {
   id: string;
@@ -34,10 +34,10 @@ export default function EditRacePage() {
   // Initialize form state from existing race data
   const [raceName, setRaceName] = useState(race.name);
   const [track, setTrack] = useState(
-    league.tracks.includes(race.track) ? race.track : "__custom__"
+    league.tracks.includes(race.track) ? race.track : "__custom__",
   );
   const [customTrack, setCustomTrack] = useState(
-    league.tracks.includes(race.track) ? "" : race.track
+    league.tracks.includes(race.track) ? "" : race.track,
   );
   const [date, setDate] = useState(race.date);
   const [results, setResults] = useState<RaceResultEntry[]>(
@@ -47,7 +47,7 @@ export default function EditRacePage() {
       position: r.position,
       lapTime: r.lapTime || "",
       fastestLap: r.fastestLap || false,
-    }))
+    })),
   );
 
   // Validation state
@@ -95,7 +95,7 @@ export default function EditRacePage() {
   const updateResult = (
     id: string,
     field: keyof RaceResultEntry,
-    value: string | number | boolean
+    value: string | number | boolean,
   ) => {
     // Ensure only one driver can have fastest lap
     if (field === "fastestLap" && value === true) {
@@ -103,11 +103,11 @@ export default function EditRacePage() {
         results.map((r) => ({
           ...r,
           fastestLap: r.id === id,
-        }))
+        })),
       );
     } else {
       setResults(
-        results.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+        results.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
       );
     }
   };
@@ -174,7 +174,8 @@ export default function EditRacePage() {
       date,
       results: results.map((r) => {
         const driver = league.drivers.find((d) => d.id === r.driverId);
-        const basePoints = pointsSystem[r.position] || 0;
+        const basePoints =
+          POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
         const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
         return {
           driverId: r.driverId,
@@ -193,7 +194,8 @@ export default function EditRacePage() {
 
   // Calculate points including fastest lap bonus
   const getPointsWithBonus = (position: number, hasFastestLap: boolean) => {
-    const basePoints = pointsSystem[position] || 0;
+    const basePoints =
+      POINTS_SYSTEM[position as keyof typeof POINTS_SYSTEM] || 0;
     const bonus = hasFastestLap && position <= 10 ? 1 : 0;
     return basePoints + bonus;
   };
@@ -333,10 +335,10 @@ export default function EditRacePage() {
                           result.position === 1
                             ? "bg-yellow-500"
                             : result.position === 2
-                            ? "bg-gray-400"
-                            : result.position === 3
-                            ? "bg-amber-700"
-                            : "bg-[var(--color-primary)]"
+                              ? "bg-gray-400"
+                              : result.position === 3
+                                ? "bg-amber-700"
+                                : "bg-[var(--color-primary)]"
                         }`}
                         aria-label={`Position ${result.position}`}
                       >
@@ -419,7 +421,7 @@ export default function EditRacePage() {
                           updateResult(
                             result.id,
                             "fastestLap",
-                            e.target.checked
+                            e.target.checked,
                           )
                         }
                         className="w-4 h-4 accent-[var(--color-primary)]"
