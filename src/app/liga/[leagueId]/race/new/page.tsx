@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
-import { getLeagueById, pointsSystem } from "@/lib/mockData";
+import { getLeagueById, POINTS_SYSTEM } from "@/lib/mockData";
 
 interface RaceResultEntry {
   id: string;
@@ -77,7 +77,7 @@ export default function NewRacePage() {
   const updateResult = (
     id: string,
     field: keyof RaceResultEntry,
-    value: string | number | boolean
+    value: string | number | boolean,
   ) => {
     // Ensure only one driver can have fastest lap
     if (field === "fastestLap" && value === true) {
@@ -85,11 +85,11 @@ export default function NewRacePage() {
         results.map((r) => ({
           ...r,
           fastestLap: r.id === id,
-        }))
+        })),
       );
     } else {
       setResults(
-        results.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+        results.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
       );
     }
   };
@@ -158,7 +158,8 @@ export default function NewRacePage() {
       date,
       results: results.map((r) => {
         const driver = league.drivers.find((d) => d.id === r.driverId);
-        const basePoints = pointsSystem[r.position] || 0;
+        const basePoints =
+          POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
         // Fastest lap bonus: +1 point if in top 10
         const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
         return {
@@ -180,7 +181,8 @@ export default function NewRacePage() {
 
   // Calculate points including fastest lap bonus
   const getPointsWithBonus = (position: number, hasFastestLap: boolean) => {
-    const basePoints = pointsSystem[position] || 0;
+    const basePoints =
+      POINTS_SYSTEM[position as keyof typeof POINTS_SYSTEM] || 0;
     const bonus = hasFastestLap && position <= 10 ? 1 : 0;
     return basePoints + bonus;
   };
@@ -334,10 +336,10 @@ export default function NewRacePage() {
                           result.position === 1
                             ? "bg-yellow-500"
                             : result.position === 2
-                            ? "bg-gray-400"
-                            : result.position === 3
-                            ? "bg-amber-700"
-                            : "bg-[var(--color-primary)]"
+                              ? "bg-gray-400"
+                              : result.position === 3
+                                ? "bg-amber-700"
+                                : "bg-[var(--color-primary)]"
                         }`}
                         aria-label={`Position ${result.position}`}
                       >
@@ -421,7 +423,7 @@ export default function NewRacePage() {
                           updateResult(
                             result.id,
                             "fastestLap",
-                            e.target.checked
+                            e.target.checked,
                           )
                         }
                         className="w-4 h-4 accent-[var(--color-primary)]"
@@ -473,7 +475,7 @@ export default function NewRacePage() {
             Points System
           </h2>
           <div className="flex flex-wrap gap-3">
-            {Object.entries(pointsSystem).map(([pos, pts]) => (
+            {Object.entries(POINTS_SYSTEM).map(([pos, pts]) => (
               <div
                 key={pos}
                 className="bg-white rounded-lg px-3 py-2 border border-[var(--color-border)] text-center"
