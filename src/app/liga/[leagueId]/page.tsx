@@ -13,7 +13,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/Table";
-import { getLeagueById, getSortedRankings } from "@/lib/mockData";
+import { getLeagueById, getDriversByPoints } from "@/lib/mockData";
 import type { Driver } from "@/lib/mockData";
 
 const MEDAL_ICONS: Record<number, string> = {
@@ -79,7 +79,7 @@ export default function LeagueDetailPage() {
   // Initialize state with the most recent season (assuming last in array is newest)
   // In a real app, you might want to sort by startDate or use an 'isActive' flag
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
-    league?.seasons[league.seasons.length - 1]?.id || ""
+    league?.seasons[league.seasons.length - 1]?.id || "",
   );
 
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
@@ -91,19 +91,21 @@ export default function LeagueDetailPage() {
   const currentSeason = league.seasons.find((s) => s.id === selectedSeasonId);
 
   const sortedDrivers = useMemo(
-    () => (currentSeason ? getSortedRankings(currentSeason.drivers) : []),
-    [currentSeason]
+    () => (currentSeason ? getDriversByPoints(currentSeason.drivers) : []),
+    [currentSeason],
   );
 
   const handleCreateSeason = () => {
     // In a real app, this would be an API call
-    // For now, we'll just alert the user as we can't easily mutate the mock data 
+    // For now, we'll just alert the user as we can't easily mutate the mock data
     // consistently across re-renders without a proper state management or backend
-    alert("This would create a new season starting with 0 points for all drivers!");
+    alert(
+      "This would create a new season starting with 0 points for all drivers!",
+    );
   };
 
   if (!currentSeason) {
-    return <div className="p-8 text-center">Season not found</div>
+    return <div className="p-8 text-center">Season not found</div>;
   }
 
   return (
@@ -130,13 +132,15 @@ export default function LeagueDetailPage() {
               Start New Season
             </Button>
           </div>
-
         </div>
       </div>
 
       {/* Season Selector */}
       <div className="mb-8 flex items-center gap-4">
-        <label htmlFor="season-select" className="font-medium text-[var(--foreground)]">
+        <label
+          htmlFor="season-select"
+          className="font-medium text-[var(--foreground)]"
+        >
           Season:
         </label>
         <select
