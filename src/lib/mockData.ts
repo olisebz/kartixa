@@ -1,51 +1,86 @@
-// Mock data for Phase 1 (UI only, no backend)
+/**
+ * Mock data for Phase 1 (UI only, no backend)
+ * This file contains type definitions, mock data, and utility functions
+ * for managing racing leagues, seasons, races, and drivers.
+ */
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 export interface Driver {
-  id: string;
-  name: string;
+  readonly id: string;
+  readonly name: string;
   totalPoints: number;
   races: number;
   wins: number;
 }
 
 export interface RaceResult {
-  driverId: string;
-  driverName: string;
-  position: number;
-  points: number;
-  lapTime?: string; // Format: "MM:SS.mmm" (e.g., "01:23.456")
-  fastestLap?: boolean;
+  readonly driverId: string;
+  readonly driverName: string;
+  readonly position: number;
+  readonly points: number;
+  readonly lapTime?: string; // Format: "MM:SS.mmm" (e.g., "01:23.456")
+  readonly fastestLap?: boolean;
 }
 
 export interface Race {
-  id: string;
-  name: string;
-  track: string;
-  date: string;
-  results: RaceResult[];
+  readonly id: string;
+  readonly name: string;
+  readonly track: string;
+  readonly date: string;
+  readonly results: readonly RaceResult[];
 }
 
 export interface Season {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate?: string;
-  isActive: boolean;
-  drivers: Driver[];
-  races: Race[];
+  readonly id: string;
+  readonly name: string;
+  readonly startDate: string;
+  readonly endDate?: string;
+  readonly isActive: boolean;
+  readonly drivers: Driver[];
+  readonly races: readonly Race[];
 }
 
 export interface League {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  tracks: string[];
-  seasons: Season[];
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly createdAt: string;
+  readonly tracks: readonly string[];
+  readonly seasons: readonly Season[];
 }
 
-// Demo leagues
-export const leagues: League[] = [
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/**
+ * Points awarded for race positions (1st through 10th place)
+ */
+export const POINTS_SYSTEM: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10, number>> = {
+  1: 25,
+  2: 18,
+  3: 15,
+  4: 12,
+  5: 10,
+  6: 8,
+  7: 6,
+  8: 4,
+  9: 2,
+  10: 1,
+} as const;
+
+// ============================================================================
+// MOCK DATA
+// ============================================================================
+
+/**
+ * Demo leagues with seasons, races, and drivers
+ * In production, this would be fetched from a backend API
+ */
+export const leagues: readonly League[] = [
   {
     id: "league-1",
     name: "Summer Championship 2025",
@@ -162,18 +197,40 @@ export const leagues: League[] = [
   },
 ];
 
-// Helper function to get a league by ID
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Retrieves a league by its unique identifier
+ * @param id - The league ID to search for
+ * @returns The league if found, undefined otherwise
+ */
 export function getLeagueById(id: string): League | undefined {
+  if (!id) return undefined;
   return leagues.find((league) => league.id === id);
 }
 
-// Helper function to get sorted rankings
-export function getSortedRankings(drivers: Driver[]): Driver[] {
+/**
+ * Sorts drivers by total points in descending order
+ * Creates a shallow copy to avoid mutating the original array
+ * @param drivers - Array of drivers to sort
+ * @returns New array of drivers sorted by points (highest first)
+ */
+export function getDriversByPoints(drivers: readonly Driver[]): Driver[] {
   return [...drivers].sort((a, b) => b.totalPoints - a.totalPoints);
 }
 
-// Helper function to get race by ID
+/**
+ * Retrieves a specific race from a league
+ * Searches through all seasons to find the race
+ * @param leagueId - The ID of the league containing the race
+ * @param raceId - The ID of the race to find
+ * @returns The race if found, undefined otherwise
+ */
 export function getRaceById(leagueId: string, raceId: string): Race | undefined {
+  if (!leagueId || !raceId) return undefined;
+
   const league = getLeagueById(leagueId);
   if (!league) return undefined;
 
@@ -181,19 +238,26 @@ export function getRaceById(leagueId: string, raceId: string): Race | undefined 
     const race = season.races.find((r) => r.id === raceId);
     if (race) return race;
   }
+  
   return undefined;
 }
 
-// Points system for positions
-export const pointsSystem: Record<number, number> = {
-  1: 25,
-  2: 18,
-  3: 15,
-  4: 12,
-  5: 10,
-  6: 8,
-  7: 6,
-  8: 4,
-  9: 2,
-  10: 1,
-};
+/**
+ * Gets the points awarded for a given position
+ * @param position - The finishing position (1-10)
+ * @returns Points awarded, or 0 if position is outside top 10
+ */
+export function getPointsForPosition(position: number): number {
+  if (position < 1 || position > 10) return 0;
+  return POINTS_SYSTEM[position as keyof typeof POINTS_SYSTEM] ?? 0;
+}
+
+/**
+ * Retrieves the active season for a given league
+ * @param leagueId - The ID of the league
+ * @returns The active season if found, undefined otherwise
+ */
+export function getActiveSeason(leagueId: string): Season | undefined {
+  const league = getLeagueById(leagueId);
+  return league?.seasons.find((season) => season.isActive);
+}
