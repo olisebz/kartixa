@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId, useMemo } from "react";
+import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
@@ -28,6 +28,10 @@ export default function NewRacePage() {
   const baseId = useId();
   const [resultIdCounter, setResultIdCounter] = useState(0);
 
+  // Get active season and its drivers
+  const activeSeason = league.seasons.find((s) => s.isActive);
+  const allDrivers = activeSeason?.drivers || [];
+
   const [raceName, setRaceName] = useState("");
   const [track, setTrack] = useState("");
   const [customTrack, setCustomTrack] = useState("");
@@ -45,10 +49,8 @@ export default function NewRacePage() {
   }>({});
 
   // Get available drivers (not yet in results)
-  const availableDrivers = useMemo(() => {
-    const usedDriverIds = new Set(results.map((r) => r.driverId));
-    return league.drivers.filter((d) => !usedDriverIds.has(d.id));
-  }, [results, league.drivers]);
+  const usedDriverIds = new Set(results.map((r) => r.driverId));
+  const availableDrivers = allDrivers.filter((d) => !usedDriverIds.has(d.id));
 
   // Track options
   const trackOptions = [
@@ -157,7 +159,7 @@ export default function NewRacePage() {
       track: selectedTrack,
       date,
       results: results.map((r) => {
-        const driver = league.drivers.find((d) => d.id === r.driverId);
+        const driver = allDrivers.find((d) => d.id === r.driverId);
         const basePoints =
           POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
         // Fastest lap bonus: +1 point if in top 10
@@ -379,7 +381,7 @@ export default function NewRacePage() {
                           })),
                           // Also include currently selected driver
                           ...(result.driverId
-                            ? league.drivers
+                            ? allDrivers
                                 .filter((d) => d.id === result.driverId)
                                 .map((d) => ({ value: d.id, label: d.name }))
                             : []),
@@ -453,7 +455,7 @@ export default function NewRacePage() {
               <p className="text-[var(--color-muted)] mb-4">
                 No results added yet. Add positions to record the race outcome.
               </p>
-              {league.drivers.length === 0 && (
+              {allDrivers.length === 0 && (
                 <p className="text-sm text-amber-600">
                   ⚠️ This league has no drivers. Add drivers first before
                   recording a race.
