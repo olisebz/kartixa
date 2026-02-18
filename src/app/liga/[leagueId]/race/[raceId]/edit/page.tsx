@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId, useMemo } from "react";
+import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/Button";
@@ -30,6 +30,10 @@ export default function EditRacePage() {
 
   const baseId = useId();
   const [resultIdCounter, setResultIdCounter] = useState(race.results.length);
+
+  // Get active season and its drivers
+  const activeSeason = league.seasons.find((s) => s.isActive);
+  const allDrivers = activeSeason?.drivers || [];
 
   // Initialize form state from existing race data
   const [raceName, setRaceName] = useState(race.name);
@@ -63,10 +67,8 @@ export default function EditRacePage() {
   const [showDeleteNotice, setShowDeleteNotice] = useState(false);
 
   // Get available drivers (not yet in results)
-  const availableDrivers = useMemo(() => {
-    const usedDriverIds = new Set(results.map((r) => r.driverId));
-    return league.drivers.filter((d) => !usedDriverIds.has(d.id));
-  }, [results, league.drivers]);
+  const usedDriverIds = new Set(results.map((r) => r.driverId));
+  const availableDrivers = allDrivers.filter((d) => !usedDriverIds.has(d.id));
 
   // Track options
   const trackOptions = [
@@ -173,7 +175,7 @@ export default function EditRacePage() {
       track: selectedTrack,
       date,
       results: results.map((r) => {
-        const driver = league.drivers.find((d) => d.id === r.driverId);
+        const driver = allDrivers.find((d) => d.id === r.driverId);
         const basePoints =
           POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
         const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
@@ -377,7 +379,7 @@ export default function EditRacePage() {
                             label: d.name,
                           })),
                           ...(result.driverId
-                            ? league.drivers
+                            ? allDrivers
                                 .filter((d) => d.id === result.driverId)
                                 .map((d) => ({ value: d.id, label: d.name }))
                             : []),
