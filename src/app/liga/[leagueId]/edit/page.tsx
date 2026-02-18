@@ -3,6 +3,7 @@
 import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
+import { CheckCircle, Plus, X } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
@@ -25,6 +26,16 @@ export default function EditLeaguePage() {
   const baseId = useId();
   const [trackIdCounter, setTrackIdCounter] = useState(league.tracks.length);
 
+  // Calculate totals from seasons
+  const totalDrivers = league.seasons.reduce((acc, season) => {
+    const uniqueDriverIds = new Set(season.drivers.map((d) => d.id));
+    return acc + uniqueDriverIds.size;
+  }, 0);
+  const totalRaces = league.seasons.reduce(
+    (acc, season) => acc + season.races.length,
+    0,
+  );
+
   // Form state initialized from league data
   const [name, setName] = useState(league.name);
   const [description, setDescription] = useState(league.description);
@@ -32,7 +43,7 @@ export default function EditLeaguePage() {
     league.tracks.map((track, index) => ({
       id: `${baseId}-track-${index}`,
       value: track,
-    }))
+    })),
   );
 
   // Validation state
@@ -98,7 +109,9 @@ export default function EditLeaguePage() {
     return (
       <div className="py-8 max-w-2xl mx-auto text-center">
         <div className="bg-[var(--color-card)] rounded-2xl p-8">
-          <div className="text-6xl mb-4">✅</div>
+          <div className="mb-4 flex justify-center">
+            <CheckCircle className="w-16 h-16 text-green-500" />
+          </div>
           <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
             League Updated!
           </h1>
@@ -175,6 +188,7 @@ export default function EditLeaguePage() {
               size="sm"
               onClick={addTrack}
             >
+              <Plus className="w-4 h-4 mr-2" />
               Add Track
             </Button>
           </div>
@@ -200,7 +214,7 @@ export default function EditLeaguePage() {
                     className="text-[var(--color-delete)] hover:text-[var(--color-delete-hover)] p-2"
                     aria-label="Remove track"
                   >
-                    ✕
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               ))}
@@ -227,13 +241,13 @@ export default function EditLeaguePage() {
             <div className="flex justify-between">
               <span>Drivers</span>
               <span className="font-medium text-[var(--foreground)]">
-                {league.drivers.length}
+                {totalDrivers}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Races</span>
               <span className="font-medium text-[var(--foreground)]">
-                {league.races.length}
+                {totalRaces}
               </span>
             </div>
           </div>

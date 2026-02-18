@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useId } from "react";
+import { Flag, Plus, X } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
@@ -111,7 +112,9 @@ export default function CreateLigaPage() {
     return (
       <div className="py-8 max-w-2xl mx-auto text-center">
         <div className="bg-[var(--color-card)] rounded-2xl p-8">
-          <div className="text-6xl mb-4">🏁</div>
+          <div className="mb-4 flex justify-center">
+            <Flag className="w-16 h-16 text-[var(--color-primary)]" />
+          </div>
           <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
             League Created!
           </h1>
@@ -197,7 +200,8 @@ export default function CreateLigaPage() {
               size="sm"
               onClick={handleAddDriver}
             >
-              + Add Driver
+              <Plus className="w-4 h-4 mr-2" />
+              Add Driver
             </Button>
           </div>
           {errors.drivers && (
@@ -223,7 +227,7 @@ export default function CreateLigaPage() {
                     className="mt-7 px-3 py-2 text-[var(--color-error,#dc2626)] hover:bg-[var(--color-card-hover)] rounded-lg transition-colors"
                     aria-label={`Remove driver ${index + 1}`}
                   >
-                    ✕
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
@@ -243,7 +247,8 @@ export default function CreateLigaPage() {
               size="sm"
               onClick={handleAddTrack}
             >
-              + Add Track
+              <Plus className="w-4 h-4 mr-2" />
+              Add Track
             </Button>
           </div>
           {errors.tracks && (
@@ -272,7 +277,7 @@ export default function CreateLigaPage() {
                     className="mt-7 px-3 py-2 text-[var(--color-error,#dc2626)] hover:bg-[var(--color-card-hover)] rounded-lg transition-colors"
                     aria-label={`Remove track ${index + 1}`}
                   >
-                    ✕
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>

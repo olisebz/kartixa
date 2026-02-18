@@ -1,8 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
+import {
+  Trophy,
+  Award,
+  TrendingUp,
+  Target,
+  Calendar,
+  Medal,
+  Users,
+  Edit,
+  Plus,
+  Flag,
+} from "lucide-react";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
 import {
@@ -31,12 +43,14 @@ function DriverStats({ driver }: { driver: Driver }) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <Target className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
           <div className="text-3xl font-bold text-[var(--color-primary)]">
             {driver.totalPoints}
           </div>
           <div className="text-sm text-[var(--color-muted)]">Total Points</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <Trophy className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
           <div className="text-3xl font-bold text-[var(--color-primary)]">
             {driver.wins}
           </div>
@@ -46,11 +60,17 @@ function DriverStats({ driver }: { driver: Driver }) {
 
       <div className="bg-[var(--color-card)] rounded-xl p-4">
         <div className="flex justify-between items-center">
-          <span className="text-[var(--color-muted)]">Races Started</span>
+          <span className="text-[var(--color-muted)] flex items-center gap-2">
+            <Flag className="w-4 h-4" />
+            Races Started
+          </span>
           <span className="font-semibold">{driver.races}</span>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-[var(--color-muted)]">Win Rate</span>
+          <span className="text-[var(--color-muted)] flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Win Rate
+          </span>
           <span className="font-semibold">
             {driver.races > 0
               ? `${Math.round((driver.wins / driver.races) * 100)}%`
@@ -58,7 +78,10 @@ function DriverStats({ driver }: { driver: Driver }) {
           </span>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-[var(--color-muted)]">Avg Points/Race</span>
+          <span className="text-[var(--color-muted)] flex items-center gap-2">
+            <Award className="w-4 h-4" />
+            Avg Points/Race
+          </span>
           <span className="font-semibold">
             {driver.races > 0
               ? (driver.totalPoints / driver.races).toFixed(1)
@@ -90,10 +113,9 @@ export default function LeagueDetailPage() {
 
   const currentSeason = league.seasons.find((s) => s.id === selectedSeasonId);
 
-  const sortedDrivers = useMemo(
-    () => (currentSeason ? getDriversByPoints(currentSeason.drivers) : []),
-    [currentSeason],
-  );
+  const sortedDrivers = currentSeason
+    ? getDriversByPoints(currentSeason.drivers)
+    : [];
 
   const handleCreateSeason = () => {
     // In a real app, this would be an API call
@@ -126,9 +148,11 @@ export default function LeagueDetailPage() {
           </div>
           <div className="flex flex-col gap-2">
             <Button href={`/liga/${leagueId}/edit`} variant="outline">
+              <Edit className="w-4 h-4 mr-2" />
               Edit League
             </Button>
             <Button onClick={handleCreateSeason} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
               Start New Season
             </Button>
           </div>
@@ -139,8 +163,9 @@ export default function LeagueDetailPage() {
       <div className="mb-8 flex items-center gap-4">
         <label
           htmlFor="season-select"
-          className="font-medium text-[var(--foreground)]"
+          className="font-medium text-[var(--foreground)] flex items-center gap-2"
         >
+          <Calendar className="w-5 h-5" />
           Season:
         </label>
         <select
@@ -165,7 +190,8 @@ export default function LeagueDetailPage() {
         {/* Left Column - Driver Rankings */}
         <div className="bg-[var(--color-card)] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-[var(--foreground)]">
+            <h2 className="text-xl font-semibold text-[var(--foreground)] flex items-center gap-2">
+              <Medal className="w-6 h-6 text-[var(--color-primary)]" />
               Driver Rankings
             </h2>
             <Button
@@ -173,6 +199,7 @@ export default function LeagueDetailPage() {
               variant="outline"
               size="sm"
             >
+              <Users className="w-4 h-4 mr-2" />
               Manage Drivers
             </Button>
           </div>
@@ -214,10 +241,12 @@ export default function LeagueDetailPage() {
         {/* Right Column - Races */}
         <div className="bg-[var(--color-card)] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-[var(--foreground)]">
+            <h2 className="text-xl font-semibold text-[var(--foreground)] flex items-center gap-2">
+              <Flag className="w-6 h-6 text-[var(--color-primary)]" />
               Races
             </h2>
             <Button href={`/liga/${leagueId}/race/new`} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
               New Race
             </Button>
           </div>
@@ -266,8 +295,9 @@ export default function LeagueDetailPage() {
                           <span className="text-[var(--color-muted)]">
                             Winner:
                           </span>
-                          <span className="font-medium">
-                            🏆 {race.results[0].driverName}
+                          <span className="font-medium flex items-center gap-1">
+                            <Trophy className="w-4 h-4 text-yellow-500" />
+                            {race.results[0].driverName}
                           </span>
                         </div>
                       </div>

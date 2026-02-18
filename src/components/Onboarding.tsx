@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Target,
+  Trophy,
+  Users,
+  Car,
+  ChartBar,
+  MessageCircle,
+} from "lucide-react";
 import Modal from "./Modal";
 import Button from "./Button";
 
 interface OnboardingStep {
   title: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const steps: OnboardingStep[] = [
@@ -15,37 +23,37 @@ const steps: OnboardingStep[] = [
     title: "Welcome to Kartixa!",
     description:
       "Your ultimate Go-Kart league management system. Track races, manage drivers, and keep standings all in one place.",
-    icon: "🎯",
+    icon: Target,
   },
   {
     title: "Create a League",
     description:
       "Start by creating a new league. Give it a name, description, and add your favorite tracks. You can always add more tracks later!",
-    icon: "🏆",
+    icon: Trophy,
   },
   {
     title: "Add Drivers",
     description:
       "Navigate to your league and go to the Drivers section. Add all participants who will be competing in your races.",
-    icon: "👥",
+    icon: Users,
   },
   {
     title: "Record Races",
     description:
       "Create new races by selecting a track and date. Then enter race results with positions, lap times, and mark the fastest lap!",
-    icon: "🏎️",
+    icon: Car,
   },
   {
     title: "Track Standings",
     description:
       "Points are calculated automatically based on positions. View the overall standings to see who's leading the championship!",
-    icon: "📊",
+    icon: ChartBar,
   },
   {
     title: "Give Feedback",
     description:
       "Use the feedback button at the bottom-right to rate your experience and help us improve Kartixa!",
-    icon: "💬",
+    icon: MessageCircle,
   },
 ];
 
@@ -91,8 +99,8 @@ export default function Onboarding({ isOpen, onClose }: OnboardingProps) {
                 index === currentStep
                   ? "w-8 bg-[var(--color-primary)]"
                   : index < currentStep
-                  ? "w-2 bg-[var(--color-primary)] opacity-50"
-                  : "w-2 bg-gray-300"
+                    ? "w-2 bg-[var(--color-primary)] opacity-50"
+                    : "w-2 bg-gray-300"
               }`}
             />
           ))}
@@ -100,8 +108,8 @@ export default function Onboarding({ isOpen, onClose }: OnboardingProps) {
 
         {/* Step content */}
         <div className="text-center mb-8 min-h-[250px] flex flex-col items-center justify-center">
-          <div className="text-6xl mb-4 animate-bounce">
-            {currentStepData.icon}
+          <div className="mb-4">
+            <currentStepData.icon className="w-16 h-16 text-[var(--color-primary)] mx-auto" />
           </div>
           <h3 className="text-2xl font-bold text-[var(--foreground)] mb-3">
             {currentStepData.title}

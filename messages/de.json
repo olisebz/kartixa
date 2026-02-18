@@ -1,0 +1,206 @@
+{
+  "nav": {
+    "home": "Home",
+    "leagues": "Ligen",
+    "about": "Über uns",
+    "settings": "Einstellungen"
+  },
+  "home": {
+    "title": "Willkommen bei Kartixa",
+    "subtitle": "Verwalte deine Kart-Racing-Ligen und verfolge Fahrerstatistiken",
+    "getStarted": "Loslegen",
+    "features": {
+      "leagues": {
+        "title": "Ligen verwalten",
+        "description": "Erstelle und verwalte mehrere Racing-Ligen mit benutzerdefinierten Einstellungen"
+      },
+      "drivers": {
+        "title": "Fahrerstatistiken",
+        "description": "Verfolge Fahrerpunkte, Siege und Performance über Rennen hinweg"
+      },
+      "races": {
+        "title": "Rennergebnisse",
+        "description": "Zeichne Rennergebnisse auf und generiere automatisch Bestenlisten"
+      }
+    }
+  },
+  "leagues": {
+    "title": "Meine Ligen",
+    "subtitle": "Verwalte deine Racing-Ligen",
+    "createNew": "Neue Liga erstellen",
+    "empty": "Noch keine Ligen. Erstelle deine erste Liga!",
+    "drivers": "Fahrer",
+    "races": "Rennen",
+    "activeSince": "Aktiv seit"
+  },
+  "league": {
+    "backToLeagues": "← Zurück zu Ligen",
+    "edit": "Liga bearbeiten",
+    "newRace": "Neues Rennen",
+    "drivers": "Fahrer",
+    "races": "Rennen",
+    "standings": "Gesamtwertung",
+    "recentRaces": "Letzte Rennen",
+    "position": "Pos",
+    "driver": "Fahrer",
+    "points": "Punkte",
+    "wins": "Siege",
+    "racesCount": "Rennen",
+    "track": "Strecke",
+    "date": "Datum",
+    "winner": "Sieger",
+    "viewResults": "Ergebnisse anzeigen"
+  },
+  "newLeague": {
+    "title": "Neue Liga erstellen",
+    "subtitle": "Erstelle eine neue Racing-Liga",
+    "leagueDetails": "Liga-Details",
+    "leagueName": "Liga-Name",
+    "leagueNamePlaceholder": "z.B. Sommermeisterschaft 2025",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Beschreibe deine Liga...",
+    "tracks": "Strecken",
+    "addTrack": "Strecke hinzufügen",
+    "trackPlaceholder": "Streckenname",
+    "noTracks": "Keine Strecken hinzugefügt. Klicke auf \"Strecke hinzufügen\", um eine hinzuzufügen.",
+    "cancel": "Abbrechen",
+    "createLeague": "Liga erstellen",
+    "success": "Liga erstellt!",
+    "successMessage": "Deine Liga wurde erfolgreich erstellt.",
+    "goToLeague": "Zur Liga",
+    "createAnother": "Weitere Liga erstellen",
+    "errors": {
+      "nameRequired": "Liga-Name ist erforderlich",
+      "trackRequired": "Mindestens eine Strecke ist erforderlich"
+    }
+  },
+  "editLeague": {
+    "title": "Liga bearbeiten",
+    "subtitle": "Liga-Details und Einstellungen aktualisieren",
+    "backToLeague": "← Zurück zur Liga",
+    "leagueInfo": "Liga-Info",
+    "created": "Erstellt",
+    "updated": "Liga aktualisiert!",
+    "successMessage": "Deine Änderungen wurden erfolgreich gespeichert.",
+    "continueEditing": "Weiter bearbeiten"
+  },
+  "newRace": {
+    "title": "Neues Rennen",
+    "subtitle": "Füge ein neues Rennen zur Liga hinzu",
+    "backToLeague": "← Zurück zur Liga",
+    "raceDetails": "Renndetails",
+    "raceName": "Rennname",
+    "raceNamePlaceholder": "z.B. Großer Preis Runde 1",
+    "track": "Strecke",
+    "selectTrack": "Strecke auswählen",
+    "date": "Datum",
+    "results": "Ergebnisse",
+    "addDriver": "Fahrer hinzufügen",
+    "driver": "Fahrer",
+    "selectDriver": "Fahrer auswählen",
+    "position": "Position",
+    "lapTime": "Rundenzeit",
+    "lapTimePlaceholder": "01:23.456",
+    "fastestLap": "Schnellste Runde",
+    "calculatedPoints": "Berechnete Punkte",
+    "noResults": "Keine Ergebnisse hinzugefügt. Klicke auf \"Fahrer hinzufügen\", um einen hinzuzufügen.",
+    "cancel": "Abbrechen",
+    "createRace": "Rennen erstellen",
+    "success": "Rennen erstellt!",
+    "successMessage": "Das Rennen wurde erfolgreich hinzugefügt.",
+    "viewResults": "Ergebnisse anzeigen",
+    "createAnother": "Weiteres Rennen erstellen",
+    "errors": {
+      "nameRequired": "Rennname ist erforderlich",
+      "trackRequired": "Strecke ist erforderlich",
+      "dateRequired": "Datum ist erforderlich",
+      "resultsRequired": "Mindestens ein Fahrer ist erforderlich",
+      "driverRequired": "Fahrer ist erforderlich",
+      "positionRequired": "Position ist erforderlich"
+    }
+  },
+  "race": {
+    "title": "Rennergebnisse",
+    "backToLeague": "← Zurück zur Liga",
+    "edit": "Rennen bearbeiten",
+    "raceDetails": "Renndetails",
+    "track": "Strecke",
+    "date": "Datum",
+    "results": "Ergebnisse",
+    "position": "Pos",
+    "driver": "Fahrer",
+    "lapTime": "Rundenzeit",
+    "points": "Punkte"
+  },
+  "editRace": {
+    "title": "Rennen bearbeiten",
+    "subtitle": "Renndetails und Ergebnisse aktualisieren",
+    "backToRace": "← Zurück zum Rennen",
+    "updated": "Rennen aktualisiert!",
+    "successMessage": "Deine Änderungen wurden erfolgreich gespeichert.",
+    "continueEditing": "Weiter bearbeiten"
+  },
+  "drivers": {
+    "title": "Fahrer",
+    "subtitle": "Alle Fahrer in dieser Liga",
+    "backToLeague": "← Zurück zur Liga",
+    "position": "Pos",
+    "driver": "Fahrer",
+    "points": "Punkte",
+    "wins": "Siege",
+    "races": "Rennen"
+  },
+  "about": {
+    "title": "Über Kartixa",
+    "subtitle": "Ein modernes Racing-Liga-Management-System",
+    "description": "Kartixa ist eine Web-Anwendung zur Verwaltung von Kart-Racing-Ligen. Verfolge Fahrerpunkte, zeichne Rennergebnisse auf und generiere automatisch Bestenlisten.",
+    "features": "Funktionen",
+    "featuresList": {
+      "leagues": "Mehrere Ligen mit benutzerdefinierten Einstellungen",
+      "drivers": "Fahrerprofile und Statistiken",
+      "races": "Aufzeichnung von Rennergebnissen",
+      "standings": "Automatische Bestenlisten",
+      "points": "Anpassbares Punktesystem"
+    },
+    "technology": "Technologie",
+    "technologyList": {
+      "nextjs": "Next.js 16 mit App Router",
+      "react": "React 19",
+      "typescript": "TypeScript",
+      "tailwind": "Tailwind CSS 4"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Passe deine App-Einstellungen an",
+    "language": {
+      "title": "Sprache",
+      "description": "Wähle deine bevorzugte Sprache",
+      "current": "Aktuelle Sprache"
+    },
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "description": "Passe das Aussehen der App an"
+    },
+    "save": "Änderungen speichern",
+    "saved": "Einstellungen gespeichert!",
+    "savedMessage": "Deine Einstellungen wurden erfolgreich aktualisiert."
+  },
+  "common": {
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "back": "Zurück",
+    "close": "Schließen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "sort": "Sortieren",
+    "viewMore": "Mehr anzeigen",
+    "viewLess": "Weniger anzeigen"
+  }
+}

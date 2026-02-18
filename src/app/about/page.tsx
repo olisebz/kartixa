@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Flag, Trophy, BarChart3, Smartphone } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About - Kartixa",
@@ -36,7 +37,7 @@ export default function AboutPage() {
           </h2>
           <ul className="space-y-3">
             <li className="flex items-start gap-3">
-              <span className="text-xl">🏁</span>
+              <Flag className="w-6 h-6 text-[var(--color-primary)] flex-shrink-0 mt-1" />
               <div>
                 <strong className="text-[var(--foreground)]">
                   League Management
@@ -48,7 +49,7 @@ export default function AboutPage() {
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-xl">🏆</span>
+              <Trophy className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-1" />
               <div>
                 <strong className="text-[var(--foreground)]">
                   Driver Rankings
@@ -60,7 +61,7 @@ export default function AboutPage() {
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-xl">📊</span>
+              <BarChart3 className="w-6 h-6 text-[var(--color-primary)] flex-shrink-0 mt-1" />
               <div>
                 <strong className="text-[var(--foreground)]">
                   Race Results
@@ -72,7 +73,7 @@ export default function AboutPage() {
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-xl">📱</span>
+              <Smartphone className="w-6 h-6 text-[var(--color-primary)] flex-shrink-0 mt-1" />
               <div>
                 <strong className="text-[var(--foreground)]">
                   Modern Interface

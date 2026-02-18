@@ -2,6 +2,15 @@
 
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
+import {
+  Trophy,
+  Zap,
+  Users as UsersIcon,
+  Award,
+  Calendar,
+  MapPin,
+  Edit,
+} from "lucide-react";
 import Button from "@/components/Button";
 import {
   Table,
@@ -27,7 +36,7 @@ export default function RaceDetailPage() {
 
   // Sort results by position
   const sortedResults = [...race.results].sort(
-    (a, b) => a.position - b.position
+    (a, b) => a.position - b.position,
   );
 
   // Find fastest lap driver
@@ -64,6 +73,7 @@ export default function RaceDetailPage() {
             href={`/liga/${leagueId}/race/${raceId}/edit`}
             variant="outline"
           >
+            <Edit className="w-4 h-4 mr-2" />
             Edit Race
           </Button>
         </div>
@@ -72,25 +82,27 @@ export default function RaceDetailPage() {
       {/* Race Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <UsersIcon className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
           <div className="text-3xl font-bold text-[var(--color-primary)]">
             {race.results.length}
           </div>
           <div className="text-sm text-[var(--color-muted)]">Participants</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-yellow-500">🏆</div>
+          <Trophy className="w-8 h-8 mx-auto text-yellow-500" />
           <div className="text-sm text-[var(--color-muted)]">
             {sortedResults[0]?.driverName || "N/A"}
           </div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
+          <Award className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
           <div className="text-3xl font-bold text-[var(--color-primary)]">
             {race.results.reduce((sum, r) => sum + r.points, 0)}
           </div>
           <div className="text-sm text-[var(--color-muted)]">Total Points</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-purple-500">🏎️</div>
+          <Zap className="w-8 h-8 mx-auto text-purple-500" />
           <div className="text-sm text-[var(--color-muted)]">
             {fastestLapDriver?.driverName || "N/A"}
           </div>
@@ -99,7 +111,8 @@ export default function RaceDetailPage() {
 
       {/* Results Table */}
       <div className="bg-[var(--color-card)] rounded-2xl p-6">
-        <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
+        <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
+          <Trophy className="w-6 h-6 text-[var(--color-primary)]" />
           Race Results
         </h2>
 
@@ -124,10 +137,10 @@ export default function RaceDetailPage() {
                           result.position === 1
                             ? "bg-yellow-500"
                             : result.position === 2
-                            ? "bg-gray-400"
-                            : result.position === 3
-                            ? "bg-amber-700"
-                            : "bg-[var(--color-primary)]"
+                              ? "bg-gray-400"
+                              : result.position === 3
+                                ? "bg-amber-700"
+                                : "bg-[var(--color-primary)]"
                         }`}
                       >
                         {result.position}
@@ -136,7 +149,9 @@ export default function RaceDetailPage() {
                   </TableCell>
                   <TableCell className="font-medium">
                     {result.driverName}
-                    {result.position === 1 && " 🏆"}
+                    {result.position === 1 && (
+                      <Trophy className="w-4 h-4 inline-block ml-2 text-yellow-500" />
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-[var(--color-primary)]">
                     {result.lapTime || "-"}
@@ -145,7 +160,12 @@ export default function RaceDetailPage() {
                     {result.points}
                   </TableCell>
                   <TableCell className="text-center">
-                    {result.fastestLap && <span title="Fastest Lap">🏎️</span>}
+                    {result.fastestLap && (
+                      <Zap
+                        className="w-4 h-4 inline-block text-[var(--color-primary)]"
+                        title="Fastest Lap"
+                      />
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

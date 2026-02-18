@@ -2,6 +2,7 @@ import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
 import { OnboardingButton } from "@/components/Onboarding";
 import { leagues } from "@/lib/mockData";
+import { Plus, Users, Flag } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function LigaPage() {
         <div className="flex items-center gap-3">
           <OnboardingButton />
           <Button href="/liga/new" size="lg">
+            <Plus className="w-5 h-5 mr-2" />
             Create New League
           </Button>
         </div>
@@ -36,9 +38,15 @@ export default function LigaPage() {
               <CardTitle>{league.name}</CardTitle>
               <CardDescription>{league.description}</CardDescription>
               <div className="mt-4 flex items-center gap-4 text-sm text-[var(--color-muted)]">
-                <span>{league.seasons.reduce((acc, s) => acc + s.drivers.length, 0)} Drivers</span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {league.seasons.reduce((acc, s) => acc + s.drivers.length, 0)}
+                </span>
                 <span>•</span>
-                <span>{league.seasons.reduce((acc, s) => acc + s.races.length, 0)} Races</span>
+                <span className="flex items-center gap-1">
+                  <Flag className="w-4 h-4" />
+                  {league.seasons.reduce((acc, s) => acc + s.races.length, 0)}
+                </span>
               </div>
             </Card>
           ))}
@@ -48,10 +56,12 @@ export default function LigaPage() {
           <p className="text-[var(--color-muted)] text-lg mb-4">
             No leagues yet. Create your first league to get started!
           </p>
-          <Button href="/liga/new">Create New League</Button>
+          <Button href="/liga/new">
+            <Plus className="w-5 h-5 mr-2" />
+            Create New League
+          </Button>
         </div>
       )}
-
     </div>
   );
 }

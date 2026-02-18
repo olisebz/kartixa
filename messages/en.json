@@ -1,0 +1,206 @@
+{
+  "nav": {
+    "home": "Home",
+    "leagues": "Leagues",
+    "about": "About",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "Welcome to Kartixa",
+    "subtitle": "Manage your kart racing leagues and track driver statistics",
+    "getStarted": "Get Started",
+    "features": {
+      "leagues": {
+        "title": "Manage Leagues",
+        "description": "Create and manage multiple racing leagues with custom settings"
+      },
+      "drivers": {
+        "title": "Driver Statistics",
+        "description": "Track driver points, wins, and performance across races"
+      },
+      "races": {
+        "title": "Race Results",
+        "description": "Record race results and automatically generate leaderboards"
+      }
+    }
+  },
+  "leagues": {
+    "title": "My Leagues",
+    "subtitle": "Manage your racing leagues",
+    "createNew": "Create New League",
+    "empty": "No leagues yet. Create your first league!",
+    "drivers": "Drivers",
+    "races": "Races",
+    "activeSince": "Active since"
+  },
+  "league": {
+    "backToLeagues": "← Back to Leagues",
+    "edit": "Edit League",
+    "newRace": "New Race",
+    "drivers": "Drivers",
+    "races": "Races",
+    "standings": "Overall Standings",
+    "recentRaces": "Recent Races",
+    "position": "Pos",
+    "driver": "Driver",
+    "points": "Points",
+    "wins": "Wins",
+    "racesCount": "Races",
+    "track": "Track",
+    "date": "Date",
+    "winner": "Winner",
+    "viewResults": "View Results"
+  },
+  "newLeague": {
+    "title": "Create New League",
+    "subtitle": "Create a new racing league",
+    "leagueDetails": "League Details",
+    "leagueName": "League Name",
+    "leagueNamePlaceholder": "e.g., Summer Championship 2025",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your league...",
+    "tracks": "Tracks",
+    "addTrack": "Add Track",
+    "trackPlaceholder": "Track name",
+    "noTracks": "No tracks added. Click \"Add Track\" to add one.",
+    "cancel": "Cancel",
+    "createLeague": "Create League",
+    "success": "League Created!",
+    "successMessage": "Your league has been created successfully.",
+    "goToLeague": "Go to League",
+    "createAnother": "Create Another League",
+    "errors": {
+      "nameRequired": "League name is required",
+      "trackRequired": "At least one track is required"
+    }
+  },
+  "editLeague": {
+    "title": "Edit League",
+    "subtitle": "Update league details and settings",
+    "backToLeague": "← Back to League",
+    "leagueInfo": "League Info",
+    "created": "Created",
+    "updated": "League Updated!",
+    "successMessage": "Your changes have been saved successfully.",
+    "continueEditing": "Continue Editing"
+  },
+  "newRace": {
+    "title": "New Race",
+    "subtitle": "Add a new race to the league",
+    "backToLeague": "← Back to League",
+    "raceDetails": "Race Details",
+    "raceName": "Race Name",
+    "raceNamePlaceholder": "e.g., Grand Prix Round 1",
+    "track": "Track",
+    "selectTrack": "Select Track",
+    "date": "Date",
+    "results": "Results",
+    "addDriver": "Add Driver",
+    "driver": "Driver",
+    "selectDriver": "Select Driver",
+    "position": "Position",
+    "lapTime": "Lap Time",
+    "lapTimePlaceholder": "01:23.456",
+    "fastestLap": "Fastest Lap",
+    "calculatedPoints": "Calculated Points",
+    "noResults": "No results added. Click \"Add Driver\" to add one.",
+    "cancel": "Cancel",
+    "createRace": "Create Race",
+    "success": "Race Created!",
+    "successMessage": "The race has been added successfully.",
+    "viewResults": "View Results",
+    "createAnother": "Create Another Race",
+    "errors": {
+      "nameRequired": "Race name is required",
+      "trackRequired": "Track is required",
+      "dateRequired": "Date is required",
+      "resultsRequired": "At least one driver is required",
+      "driverRequired": "Driver is required",
+      "positionRequired": "Position is required"
+    }
+  },
+  "race": {
+    "title": "Race Results",
+    "backToLeague": "← Back to League",
+    "edit": "Edit Race",
+    "raceDetails": "Race Details",
+    "track": "Track",
+    "date": "Date",
+    "results": "Results",
+    "position": "Pos",
+    "driver": "Driver",
+    "lapTime": "Lap Time",
+    "points": "Points"
+  },
+  "editRace": {
+    "title": "Edit Race",
+    "subtitle": "Update race details and results",
+    "backToRace": "← Back to Race",
+    "updated": "Race Updated!",
+    "successMessage": "Your changes have been saved successfully.",
+    "continueEditing": "Continue Editing"
+  },
+  "drivers": {
+    "title": "Drivers",
+    "subtitle": "All drivers in this league",
+    "backToLeague": "← Back to League",
+    "position": "Pos",
+    "driver": "Driver",
+    "points": "Points",
+    "wins": "Wins",
+    "races": "Races"
+  },
+  "about": {
+    "title": "About Kartixa",
+    "subtitle": "A modern racing league management system",
+    "description": "Kartixa is a web application for managing kart racing leagues. Track driver points, record race results, and automatically generate leaderboards.",
+    "features": "Features",
+    "featuresList": {
+      "leagues": "Multiple leagues with custom settings",
+      "drivers": "Driver profiles and statistics",
+      "races": "Race result recording",
+      "standings": "Automatic leaderboards",
+      "points": "Customizable points system"
+    },
+    "technology": "Technology",
+    "technologyList": {
+      "nextjs": "Next.js 16 with App Router",
+      "react": "React 19",
+      "typescript": "TypeScript",
+      "tailwind": "Tailwind CSS 4"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Customize your app preferences",
+    "language": {
+      "title": "Language",
+      "description": "Select your preferred language",
+      "current": "Current Language"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look of the app"
+    },
+    "save": "Save Changes",
+    "saved": "Settings Saved!",
+    "savedMessage": "Your settings have been updated successfully."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "viewMore": "View More",
+    "viewLess": "View Less"
+  }
+}

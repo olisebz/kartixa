@@ -3,6 +3,14 @@
 import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
+import {
+  CheckCircle,
+  Plus,
+  X,
+  Zap,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
@@ -206,7 +214,9 @@ export default function EditRacePage() {
     return (
       <div className="py-8 max-w-2xl mx-auto text-center">
         <div className="bg-[var(--color-card)] rounded-2xl p-8">
-          <div className="text-6xl mb-4">✅</div>
+          <div className="mb-4 flex justify-center">
+            <CheckCircle className="w-16 h-16 text-green-500" />
+          </div>
           <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
             Race Updated!
           </h1>
@@ -305,6 +315,7 @@ export default function EditRacePage() {
               onClick={addResult}
               disabled={availableDrivers.length === 0}
             >
+              <Plus className="w-4 h-4 mr-2" />
               Add Position
             </Button>
           </div>
@@ -330,7 +341,7 @@ export default function EditRacePage() {
                         className="text-[var(--color-muted)] hover:text-[var(--foreground)] disabled:opacity-30"
                         aria-label="Move up"
                       >
-                        ▲
+                        <ChevronUp className="w-5 h-5" />
                       </button>
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
@@ -360,7 +371,7 @@ export default function EditRacePage() {
                         className="text-[var(--color-muted)] hover:text-[var(--foreground)] disabled:opacity-30"
                         aria-label="Move down"
                       >
-                        ▼
+                        <ChevronDown className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -429,9 +440,10 @@ export default function EditRacePage() {
                         className="w-4 h-4 accent-[var(--color-primary)]"
                         aria-label="Fastest lap"
                       />
-                      <span className="text-sm" aria-hidden="true">
-                        🏎️
-                      </span>
+                      <Zap
+                        className="w-4 h-4 text-purple-500"
+                        aria-hidden="true"
+                      />
                       <span className="sr-only">Fastest lap</span>
                     </label>
 
@@ -442,7 +454,7 @@ export default function EditRacePage() {
                       className="text-[var(--color-delete)] hover:text-[var(--color-delete-hover)] p-2"
                       aria-label="Remove result"
                     >
-                      ✕
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>

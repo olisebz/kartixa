@@ -3,6 +3,7 @@
 import { useState, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
+import { Users, Plus, Edit2, Trash2, Check, X, Medal } from "lucide-react";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
 import Input from "@/components/forms/Input";
@@ -26,11 +27,22 @@ export default function DriversPage() {
     notFound();
   }
 
-  const baseId = useId();
-  const [driverIdCounter, setDriverIdCounter] = useState(league.drivers.length);
+  // Get the active season (or the most recent one)
+  const activeSeason =
+    league.seasons.find((s) => s.isActive) ||
+    league.seasons[league.seasons.length - 1];
 
-  // Local drivers state (copy of league drivers for editing)
-  const [drivers, setDrivers] = useState<Driver[]>([...league.drivers]);
+  if (!activeSeason) {
+    notFound();
+  }
+
+  const baseId = useId();
+  const [driverIdCounter, setDriverIdCounter] = useState(
+    activeSeason.drivers.length,
+  );
+
+  // Local drivers state (copy of season drivers for editing)
+  const [drivers, setDrivers] = useState<Driver[]>([...activeSeason.drivers]);
 
   // Edit modal state
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
@@ -66,7 +78,7 @@ export default function DriversPage() {
 
     if (
       drivers.some(
-        (d) => d.name.toLowerCase() === newDriverName.trim().toLowerCase()
+        (d) => d.name.toLowerCase() === newDriverName.trim().toLowerCase(),
       )
     ) {
       setAddError("A driver with this name already exists");
@@ -101,7 +113,7 @@ export default function DriversPage() {
       drivers.some(
         (d) =>
           d.id !== editingDriver.id &&
-          d.name.toLowerCase() === editName.trim().toLowerCase()
+          d.name.toLowerCase() === editName.trim().toLowerCase(),
       )
     ) {
       setEditError("A driver with this name already exists");
@@ -110,8 +122,8 @@ export default function DriversPage() {
 
     setDrivers(
       drivers.map((d) =>
-        d.id === editingDriver.id ? { ...d, name: editName.trim() } : d
-      )
+        d.id === editingDriver.id ? { ...d, name: editName.trim() } : d,
+      ),
     );
     showSuccess(`Driver renamed to ${editName.trim()}`);
     setEditingDriver(null);
@@ -122,7 +134,7 @@ export default function DriversPage() {
   const handleDeleteDriver = (driver: Driver) => {
     if (driver.races > 0) {
       setDeleteError(
-        `Cannot delete ${driver.name} because they have participated in ${driver.races} race(s). This would affect race history.`
+        `Cannot delete ${driver.name} because they have participated in ${driver.races} race(s). This would affect race history.`,
       );
       setTimeout(() => setDeleteError(""), 5000);
       return;
@@ -140,7 +152,7 @@ export default function DriversPage() {
 
   // Sort drivers by points
   const sortedDrivers = [...drivers].sort(
-    (a, b) => b.totalPoints - a.totalPoints
+    (a, b) => b.totalPoints - a.totalPoints,
   );
 
   return (
@@ -157,7 +169,8 @@ export default function DriversPage() {
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--foreground)]">
+            <h1 className="text-3xl font-bold text-[var(--foreground)] flex items-center gap-2">
+              <Users className="w-8 h-8" />
               Manage Drivers
             </h1>
             <p className="text-[var(--color-muted)] mt-1">
@@ -165,21 +178,26 @@ export default function DriversPage() {
               {drivers.length !== 1 && "s"}
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(true)}>Add Driver</Button>
+          <Button onClick={() => setShowAddForm(true)}>
+            <Plus className="w-5 h-5 mr-2" />
+            Add Driver
+          </Button>
         </div>
       </div>
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 text-green-700">
-          ✓ {successMessage}
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2">
+          <Check className="w-5 h-5" />
+          {successMessage}
         </div>
       )}
 
       {/* Delete Error Message */}
       {deleteError && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
-          ✕ {deleteError}
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <X className="w-5 h-5" />
+          {deleteError}
         </div>
       )}
 
@@ -264,10 +282,17 @@ export default function DriversPage() {
                 <TableRow key={driver.id}>
                   <TableCell className="font-medium">
                     {index + 1 <= 3 ? (
-                      <span>
-                        {index + 1 === 1 && "🥇"}
-                        {index + 1 === 2 && "🥈"}
-                        {index + 1 === 3 && "🥉"}
+                      <span className="flex items-center gap-1">
+                        <Medal
+                          className={`w-5 h-5 ${
+                            index + 1 === 1
+                              ? "text-yellow-500"
+                              : index + 1 === 2
+                                ? "text-gray-400"
+                                : "text-amber-700"
+                          }`}
+                        />
+                        {index + 1}
                       </span>
                     ) : (
                       index + 1
@@ -283,13 +308,14 @@ export default function DriversPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEditDriver(driver)}
-                        className="text-[var(--color-primary)] hover:underline text-sm"
+                        className="text-[var(--color-primary)] hover:underline text-sm flex items-center gap-1"
                       >
+                        <Edit2 className="w-4 h-4" />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteDriver(driver)}
-                        className="text-[var(--color-delete)] hover:underline text-sm"
+                        className="text-[var(--color-delete)] hover:underline text-sm flex items-center gap-1"
                         disabled={driver.races > 0}
                         title={
                           driver.races > 0
@@ -297,6 +323,7 @@ export default function DriversPage() {
                             : "Delete driver"
                         }
                       >
+                        <Trash2 className="w-4 h-4" />
                         Delete
                       </button>
                     </div>
@@ -307,7 +334,7 @@ export default function DriversPage() {
           </Table>
         ) : (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">👤</div>
+            <Users className="w-16 h-16 mx-auto mb-4 text-[var(--color-muted)]" />
             <h3 className="text-xl font-semibold text-[var(--foreground)] mb-2">
               No Drivers Yet
             </h3>
