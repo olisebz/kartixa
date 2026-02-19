@@ -88,6 +88,8 @@ export default function NewRacePage() {
         results.map((r) => ({
           ...r,
           fastestLap: r.id === id,
+          // Clear lap time for drivers who lose fastest lap status
+          lapTime: r.id === id ? r.lapTime : "",
         })),
       );
     } else {
@@ -404,6 +406,7 @@ export default function NewRacePage() {
                         }
                         placeholder="01:23.456"
                         className="text-center font-mono"
+                        disabled={!result.fastestLap}
                       />
                     </div>
 

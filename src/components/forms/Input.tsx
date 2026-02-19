@@ -20,7 +20,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`w-full px-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-white text-[var(--foreground)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all ${
+          className={`w-full px-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-white text-[var(--foreground)] placeholder:text-[var(--color-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed ${
             error ? "border-red-500 focus:ring-red-500" : ""
           } ${className}`}
           aria-invalid={error ? "true" : "false"}
@@ -38,7 +38,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
