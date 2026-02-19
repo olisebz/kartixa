@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kartixa - Go-Kart League Tracker",
   description: "Track your Go-Kart leagues, races, and driver rankings.",
+  icons: {
+    icon: "/iOS-App-icon-kartixa.svg",
+  },
 };
 
 export default function RootLayout({
