@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Flag, Trophy, BarChart3, Smartphone } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -10,9 +11,15 @@ export default function AboutPage() {
   return (
     <div className="py-8 max-w-3xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-[var(--foreground)] mb-4">
-          Kartixa
-        </h1>
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/Kartixa.svg"
+            alt="Kartixa"
+            width={300}
+            height={96}
+            priority
+          />
+        </div>
         <p className="text-xl text-[var(--color-muted)]">
           Your Go-Kart League & Race Tracker
         </p>
