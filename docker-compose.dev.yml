@@ -1,0 +1,29 @@
+# =============================================================================
+# Kartixa — Local Development (DB only)
+# Usage: docker compose -f docker-compose.dev.yml up -d
+# Then:  npm run dev
+# =============================================================================
+
+services:
+  db:
+    image: mariadb:11
+    container_name: kartixa-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: kartixa_dev
+      MARIADB_DATABASE: kartixa
+      MARIADB_USER: kartixa
+      MARIADB_PASSWORD: kartixa_dev
+    volumes:
+      - kartixa_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  kartixa_db_data:

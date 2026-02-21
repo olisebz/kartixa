@@ -1,0 +1,58 @@
+# =============================================================================
+# Kartixa — Docker Compose (Development)
+# Usage: docker compose up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # MariaDB Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: mariadb:11
+    container_name: kartixa-db
+    restart: unless-stopped
+    ports:
+      - "${DATABASE_PORT:-3306}:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DATABASE_PASSWORD:-kartixa_dev}
+      MARIADB_DATABASE: ${DATABASE_NAME:-kartixa}
+      MARIADB_USER: ${DATABASE_USER:-kartixa}
+      MARIADB_PASSWORD: ${DATABASE_PASSWORD:-kartixa_dev}
+    volumes:
+      - kartixa_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Next.js App (Production Build)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kartixa-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${DATABASE_USER:-kartixa}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-kartixa_dev}
+      DATABASE_NAME: ${DATABASE_NAME:-kartixa}
+      API_KEY: ${API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      NODE_ENV: production
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+
+volumes:
+  kartixa_db_data:
