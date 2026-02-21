@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
   Edit,
   Plus,
   Flag,
+  Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
@@ -25,8 +26,13 @@ import {
   TableHead,
   TableCell,
 } from "@/components/Table";
-import { getLeagueById, getDriversByPoints } from "@/lib/mockData";
-import type { Driver } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import type {
+  LeagueDetailDTO,
+  DriverDTO,
+  RaceListDTO,
+  SeasonDTO,
+} from "@/server/domain/dto";
 
 const MEDAL_ICONS: Record<number, string> = {
   1: "🥇 ",
@@ -38,7 +44,7 @@ function getRankDisplay(rank: number): string {
   return MEDAL_ICONS[rank] || String(rank);
 }
 
-function DriverStats({ driver }: { driver: Driver }) {
+function DriverStats({ driver }: { driver: DriverDTO }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -97,38 +103,102 @@ export default function LeagueDetailPage() {
   const params = useParams();
   const router = useRouter();
   const leagueId = params.leagueId as string;
-  const league = getLeagueById(leagueId);
 
-  // Initialize state with the most recent season (assuming last in array is newest)
-  // In a real app, you might want to sort by startDate or use an 'isActive' flag
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
-    league?.seasons[league.seasons.length - 1]?.id || "",
-  );
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [drivers, setDrivers] = useState<DriverDTO[]>([]);
+  const [races, setRaces] = useState<RaceListDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+  const [selectedDriver, setSelectedDriver] = useState<DriverDTO | null>(null);
 
-  if (!league) {
-    notFound();
+  // Load league detail
+  useEffect(() => {
+    api.leagues
+      .get(leagueId)
+      .then((data) => {
+        setLeague(data);
+        // Select the active season, or the last one
+        const active = data.seasons.find((s) => s.isActive);
+        const season = active || data.seasons[data.seasons.length - 1];
+        if (season) {
+          setSelectedSeasonId(season.id);
+        }
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId]);
+
+  // Load drivers + races when season changes
+  const loadSeasonData = useCallback(async () => {
+    if (!selectedSeasonId || !leagueId) return;
+    try {
+      const [driversData, racesData] = await Promise.all([
+        api.drivers.list(leagueId, selectedSeasonId),
+        api.races.list(leagueId, selectedSeasonId),
+      ]);
+      setDrivers(driversData);
+      setRaces(racesData);
+    } catch {
+      // Season data failed — show empty
+      setDrivers([]);
+      setRaces([]);
+    }
+  }, [leagueId, selectedSeasonId]);
+
+  useEffect(() => {
+    loadSeasonData();
+  }, [loadSeasonData]);
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (error || !league) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load league: {error}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
   }
 
   const currentSeason = league.seasons.find((s) => s.id === selectedSeasonId);
+  const sortedDrivers = [...drivers].sort(
+    (a, b) => b.totalPoints - a.totalPoints,
+  );
 
-  const sortedDrivers = currentSeason
-    ? getDriversByPoints(currentSeason.drivers)
-    : [];
-
-  const handleCreateSeason = () => {
-    // In a real app, this would be an API call
-    // For now, we'll just alert the user as we can't easily mutate the mock data
-    // consistently across re-renders without a proper state management or backend
-    alert(
-      "This would create a new season starting with 0 points for all drivers!",
-    );
+  const handleCreateSeason = async () => {
+    const nextNumber = league.seasons.length + 1;
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      await api.seasons.create(leagueId, {
+        name: `Season ${nextNumber}`,
+        startDate: today,
+      });
+      // Reload league to get updated seasons
+      const updated = await api.leagues.get(leagueId);
+      setLeague(updated);
+      const newSeason =
+        updated.seasons.find((s) => s.isActive) ||
+        updated.seasons[updated.seasons.length - 1];
+      if (newSeason) setSelectedSeasonId(newSeason.id);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create season";
+      alert(message);
+    }
   };
-
-  if (!currentSeason) {
-    return <div className="p-8 text-center">Season not found</div>;
-  }
 
   return (
     <div className="py-8">
@@ -160,30 +230,32 @@ export default function LeagueDetailPage() {
       </div>
 
       {/* Season Selector */}
-      <div className="mb-8 flex items-center gap-4">
-        <label
-          htmlFor="season-select"
-          className="font-medium text-[var(--foreground)] flex items-center gap-2"
-        >
-          <Calendar className="w-5 h-5" />
-          Season:
-        </label>
-        <select
-          id="season-select"
-          value={selectedSeasonId}
-          onChange={(e) => setSelectedSeasonId(e.target.value)}
-          className="bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-        >
-          {league.seasons.map((season) => (
-            <option key={season.id} value={season.id}>
-              {season.name}
-            </option>
-          ))}
-        </select>
-        <span className="text-sm text-[var(--color-muted)]">
-          {new Date(currentSeason.startDate).getFullYear()}
-        </span>
-      </div>
+      {league.seasons.length > 0 && currentSeason && (
+        <div className="mb-8 flex items-center gap-4">
+          <label
+            htmlFor="season-select"
+            className="font-medium text-[var(--foreground)] flex items-center gap-2"
+          >
+            <Calendar className="w-5 h-5" />
+            Season:
+          </label>
+          <select
+            id="season-select"
+            value={selectedSeasonId}
+            onChange={(e) => setSelectedSeasonId(e.target.value)}
+            className="bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          >
+            {league.seasons.map((season) => (
+              <option key={season.id} value={season.id}>
+                {season.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-sm text-[var(--color-muted)]">
+            {new Date(currentSeason.startDate).getFullYear()}
+          </span>
+        </div>
+      )}
 
       {/* Main Content - Two Columns on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -251,9 +323,9 @@ export default function LeagueDetailPage() {
             </Button>
           </div>
 
-          {currentSeason.races.length > 0 ? (
+          {races.length > 0 ? (
             <div className="space-y-3">
-              {currentSeason.races.map((race) => {
+              {races.map((race) => {
                 const navigateToRace = () => {
                   router.push(`/liga/${leagueId}/race/${race.id}`);
                 };
@@ -289,7 +361,7 @@ export default function LeagueDetailPage() {
                         })}
                       </span>
                     </div>
-                    {race.results.length > 0 && (
+                    {race.winner && (
                       <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-[var(--color-muted)]">
@@ -297,7 +369,7 @@ export default function LeagueDetailPage() {
                           </span>
                           <span className="font-medium flex items-center gap-1">
                             <Trophy className="w-4 h-4 text-yellow-500" />
-                            {race.results[0].driverName}
+                            {race.winner}
                           </span>
                         </div>
                       </div>

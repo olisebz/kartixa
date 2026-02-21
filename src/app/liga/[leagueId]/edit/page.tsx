@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
-import { CheckCircle, Plus, X } from "lucide-react";
+import { CheckCircle, Plus, X, Loader2 } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
-import { getLeagueById } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import type { LeagueDetailDTO } from "@/server/domain/dto";
 
 interface ListItem {
   id: string;
@@ -17,34 +18,19 @@ interface ListItem {
 export default function EditLeaguePage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
-  const league = getLeagueById(leagueId);
-
-  if (!league) {
-    notFound();
-  }
 
   const baseId = useId();
-  const [trackIdCounter, setTrackIdCounter] = useState(league.tracks.length);
 
-  // Calculate totals from seasons
-  const totalDrivers = league.seasons.reduce((acc, season) => {
-    const uniqueDriverIds = new Set(season.drivers.map((d) => d.id));
-    return acc + uniqueDriverIds.size;
-  }, 0);
-  const totalRaces = league.seasons.reduce(
-    (acc, season) => acc + season.races.length,
-    0,
-  );
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
 
-  // Form state initialized from league data
-  const [name, setName] = useState(league.name);
-  const [description, setDescription] = useState(league.description);
-  const [tracks, setTracks] = useState<ListItem[]>(
-    league.tracks.map((track, index) => ({
-      id: `${baseId}-track-${index}`,
-      value: track,
-    })),
-  );
+  const [trackIdCounter, setTrackIdCounter] = useState(0);
+
+  // Form state
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [tracks, setTracks] = useState<ListItem[]>([]);
 
   // Validation state
   const [errors, setErrors] = useState<{
@@ -53,6 +39,56 @@ export default function EditLeaguePage() {
   }>({});
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Load league data
+  useEffect(() => {
+    api.leagues
+      .get(leagueId)
+      .then((data) => {
+        setLeague(data);
+        setName(data.name);
+        setDescription(data.description);
+        setTracks(
+          data.tracks.map((track, index) => ({
+            id: `${baseId}-track-${index}`,
+            value: track,
+          })),
+        );
+        setTrackIdCounter(data.tracks.length);
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setPageError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId, baseId]);
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (pageError || !league) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load league: {pageError}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
+
+  // Compute stats from season DTOs
+  const totalDrivers = league.seasons.reduce(
+    (acc, s) => acc + s.driverCount,
+    0,
+  );
+  const totalRaces = league.seasons.reduce((acc, s) => acc + s.raceCount, 0);
 
   const addTrack = () => {
     setTracks([
@@ -88,21 +124,27 @@ export default function EditLeaguePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
-    const updatedLeague = {
-      ...league,
-      name: name.trim(),
-      description: description.trim(),
-      tracks: tracks.filter((t) => t.value.trim()).map((t) => t.value.trim()),
-    };
-
-    // In Phase 1, just show success
-    void updatedLeague;
-    setShowSuccess(true);
+    setSubmitting(true);
+    try {
+      const updated = await api.leagues.update(leagueId, {
+        name: name.trim(),
+        description: description.trim(),
+        tracks: tracks.filter((t) => t.value.trim()).map((t) => t.value.trim()),
+      });
+      setLeague(updated);
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update league";
+      setErrors({ name: message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (showSuccess) {
@@ -262,8 +304,8 @@ export default function EditLeaguePage() {
           >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1">
-            Save Changes
+          <Button type="submit" className="flex-1" disabled={submitting}>
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>

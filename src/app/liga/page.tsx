@@ -1,16 +1,43 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Card, { CardTitle, CardDescription } from "@/components/Card";
 import Button from "@/components/Button";
 import { OnboardingButton } from "@/components/Onboarding";
-import { leagues } from "@/lib/mockData";
-import { Plus, Users, Flag } from "lucide-react";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Leagues - Kartixa",
-  description: "Browse and manage your Go-Kart leagues.",
-};
+import { api } from "@/lib/api";
+import type { LeagueListDTO } from "@/server/domain/dto";
+import { Plus, Users, Flag, Loader2 } from "lucide-react";
 
 export default function LigaPage() {
+  const [leagues, setLeagues] = useState<LeagueListDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.leagues
+      .list()
+      .then(setLeagues)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load leagues: {error}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -40,12 +67,12 @@ export default function LigaPage() {
               <div className="mt-4 flex items-center gap-4 text-sm text-[var(--color-muted)]">
                 <span className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  {league.seasons.reduce((acc, s) => acc + s.drivers.length, 0)}
+                  {league.driverCount}
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
                   <Flag className="w-4 h-4" />
-                  {league.seasons.reduce((acc, s) => acc + s.races.length, 0)}
+                  {league.raceCount}
                 </span>
               </div>
             </Card>

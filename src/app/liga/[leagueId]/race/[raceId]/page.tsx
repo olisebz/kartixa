@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -7,9 +8,8 @@ import {
   Zap,
   Users as UsersIcon,
   Award,
-  Calendar,
-  MapPin,
   Edit,
+  Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
 import {
@@ -20,18 +20,49 @@ import {
   TableHead,
   TableCell,
 } from "@/components/Table";
-import { getLeagueById, getRaceById } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import type { LeagueDetailDTO, RaceDetailDTO } from "@/server/domain/dto";
 
 export default function RaceDetailPage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
   const raceId = params.raceId as string;
 
-  const league = getLeagueById(leagueId);
-  const race = getRaceById(leagueId, raceId);
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [race, setRace] = useState<RaceDetailDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!league || !race) {
-    notFound();
+  useEffect(() => {
+    Promise.all([api.leagues.get(leagueId), api.races.get(leagueId, raceId)])
+      .then(([leagueData, raceData]) => {
+        setLeague(leagueData);
+        setRace(raceData);
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId, raceId]);
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (error || !league || !race) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load race: {error}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
   }
 
   // Sort results by position
@@ -163,7 +194,7 @@ export default function RaceDetailPage() {
                     {result.fastestLap && (
                       <Zap
                         className="w-4 h-4 inline-block text-[var(--color-primary)]"
-                        title="Fastest Lap"
+                        aria-label="Fastest Lap"
                       />
                     )}
                   </TableCell>

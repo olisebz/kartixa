@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -10,11 +10,18 @@ import {
   Zap,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
-import { getLeagueById, getRaceById, POINTS_SYSTEM } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import { POINTS_SYSTEM } from "@/server/domain/constants";
+import type {
+  LeagueDetailDTO,
+  RaceDetailDTO,
+  DriverDTO,
+} from "@/server/domain/dto";
 
 interface RaceResultEntry {
   id: string;
@@ -29,38 +36,21 @@ export default function EditRacePage() {
   const leagueId = params.leagueId as string;
   const raceId = params.raceId as string;
 
-  const league = getLeagueById(leagueId);
-  const race = getRaceById(leagueId, raceId);
-
-  if (!league || !race) {
-    notFound();
-  }
-
   const baseId = useId();
-  const [resultIdCounter, setResultIdCounter] = useState(race.results.length);
 
-  // Get active season and its drivers
-  const activeSeason = league.seasons.find((s) => s.isActive);
-  const allDrivers = activeSeason?.drivers || [];
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [allDrivers, setAllDrivers] = useState<DriverDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
 
-  // Initialize form state from existing race data
-  const [raceName, setRaceName] = useState(race.name);
-  const [track, setTrack] = useState(
-    league.tracks.includes(race.track) ? race.track : "__custom__",
-  );
-  const [customTrack, setCustomTrack] = useState(
-    league.tracks.includes(race.track) ? "" : race.track,
-  );
-  const [date, setDate] = useState(race.date);
-  const [results, setResults] = useState<RaceResultEntry[]>(
-    race.results.map((r, index) => ({
-      id: `${baseId}-result-${index}`,
-      driverId: r.driverId,
-      position: r.position,
-      lapTime: r.lapTime || "",
-      fastestLap: r.fastestLap || false,
-    })),
-  );
+  const [resultIdCounter, setResultIdCounter] = useState(0);
+
+  // Form state — initialized after load
+  const [raceName, setRaceName] = useState("");
+  const [track, setTrack] = useState("");
+  const [customTrack, setCustomTrack] = useState("");
+  const [date, setDate] = useState("");
+  const [results, setResults] = useState<RaceResultEntry[]>([]);
 
   // Validation state
   const [errors, setErrors] = useState<{
@@ -70,9 +60,57 @@ export default function EditRacePage() {
   }>({});
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Delete notification state
   const [showDeleteNotice, setShowDeleteNotice] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Load league, race, and drivers
+  useEffect(() => {
+    Promise.all([api.leagues.get(leagueId), api.races.get(leagueId, raceId)])
+      .then(async ([leagueData, raceData]) => {
+        setLeague(leagueData);
+        setRaceName(raceData.name);
+        setDate(raceData.date);
+
+        // Determine track selection
+        if (leagueData.tracks.includes(raceData.track)) {
+          setTrack(raceData.track);
+        } else {
+          setTrack("__custom__");
+          setCustomTrack(raceData.track);
+        }
+
+        // Initialize results from race data
+        setResults(
+          raceData.results.map((r, index) => ({
+            id: `${baseId}-result-${index}`,
+            driverId: r.driverId,
+            position: r.position,
+            lapTime: r.lapTime || "",
+            fastestLap: r.fastestLap,
+          })),
+        );
+        setResultIdCounter(raceData.results.length);
+
+        // Load drivers for the active season
+        const activeSeason =
+          leagueData.seasons.find((s) => s.isActive) ||
+          leagueData.seasons[leagueData.seasons.length - 1];
+        if (activeSeason) {
+          const driversData = await api.drivers.list(leagueId, activeSeason.id);
+          setAllDrivers(driversData);
+        }
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setPageError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId, raceId, baseId]);
 
   // Get available drivers (not yet in results)
   const usedDriverIds = new Set(results.map((r) => r.driverId));
@@ -81,7 +119,7 @@ export default function EditRacePage() {
   // Track options
   const trackOptions = [
     { value: "", label: "Select a track..." },
-    ...league.tracks.map((t) => ({ value: t, label: t })),
+    ...(league?.tracks || []).map((t) => ({ value: t, label: t })),
     { value: "__custom__", label: "+ Add new track" },
   ];
 
@@ -172,45 +210,59 @@ export default function EditRacePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     const selectedTrack = track === "__custom__" ? customTrack : track;
 
-    const updatedRace = {
-      ...race,
-      name: raceName,
-      track: selectedTrack,
-      date,
-      results: results.map((r) => {
-        const driver = allDrivers.find((d) => d.id === r.driverId);
-        const basePoints =
-          POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
-        const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
-        return {
+    setSubmitting(true);
+    try {
+      await api.races.update(leagueId, raceId, {
+        name: raceName,
+        track: selectedTrack,
+        date,
+        results: results.map((r) => ({
           driverId: r.driverId,
-          driverName: driver?.name || "",
           position: r.position,
-          lapTime: r.lapTime || undefined,
-          points: basePoints + fastestLapBonus,
+          lapTime: r.lapTime || null,
           fastestLap: r.fastestLap,
-        };
-      }),
-    };
-
-    void updatedRace;
-    setShowSuccess(true);
+        })),
+      });
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update race";
+      setErrors({ results: message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Calculate points including fastest lap bonus
   const getPointsWithBonus = (position: number, hasFastestLap: boolean) => {
-    const basePoints =
-      POINTS_SYSTEM[position as keyof typeof POINTS_SYSTEM] || 0;
+    const basePoints = POINTS_SYSTEM[position] || 0;
     const bonus = hasFastestLap && position <= 10 ? 1 : 0;
     return basePoints + bonus;
   };
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (pageError || !league) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load race: {pageError}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
 
   if (showSuccess) {
     return (
@@ -480,19 +532,43 @@ export default function EditRacePage() {
             undone.
           </p>
           {showDeleteNotice && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-              ℹ️ Delete functionality will be available in Phase 2 when data
-              persistence is implemented.
+            <div className="mb-4 flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-100"
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await api.races.delete(leagueId, raceId);
+                    window.location.href = `/liga/${leagueId}`;
+                  } catch {
+                    setDeleting(false);
+                  }
+                }}
+              >
+                {deleting ? "Deleting..." : "Confirm Delete"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowDeleteNotice(false)}
+              >
+                Cancel
+              </Button>
             </div>
           )}
-          <Button
-            type="button"
-            variant="outline"
-            className="border-red-300 text-red-600 hover:bg-red-100"
-            onClick={() => setShowDeleteNotice(true)}
-          >
-            Delete Race
-          </Button>
+          {!showDeleteNotice && (
+            <Button
+              type="button"
+              variant="outline"
+              className="border-red-300 text-red-600 hover:bg-red-100"
+              onClick={() => setShowDeleteNotice(true)}
+            >
+              Delete Race
+            </Button>
+          )}
         </div>
 
         {/* Submit */}
@@ -504,8 +580,8 @@ export default function EditRacePage() {
           >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1">
-            Save Changes
+          <Button type="submit" className="flex-1" disabled={submitting}>
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </form>

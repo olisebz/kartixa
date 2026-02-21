@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle, Check, Key } from "lucide-react";
 import Button from "@/components/Button";
+import Input from "@/components/forms/Input";
 import { useLocale } from "@/LocaleContext";
 import { locales, localeNames, type Locale } from "@/i18n";
 
 export default function SettingsPage() {
   const { locale, setLocale, t } = useLocale();
   const [selectedLanguage, setSelectedLanguage] = useState<Locale>(locale);
+  const [apiKey, setApiKey] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("kartixa_api_key");
+    if (stored) setApiKey(stored);
+  }, []);
 
   const handleLanguageChange = (newLocale: Locale) => {
     setSelectedLanguage(newLocale);
@@ -18,6 +26,13 @@ export default function SettingsPage() {
   const handleSave = () => {
     if (selectedLanguage !== locale) {
       setLocale(selectedLanguage);
+    }
+
+    // Save API key
+    if (apiKey.trim()) {
+      localStorage.setItem("kartixa_api_key", apiKey.trim());
+    } else {
+      localStorage.removeItem("kartixa_api_key");
     }
 
     setShowSuccess(true);
@@ -108,6 +123,24 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* API Key Settings */}
+      <div className="bg-[var(--color-card)] rounded-2xl p-6 mb-6">
+        <h2 className="text-xl font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
+          <Key className="w-5 h-5" />
+          API Key
+        </h2>
+        <p className="text-[var(--color-muted)] mb-4 text-sm">
+          Required for creating and editing leagues, races, and drivers.
+        </p>
+        <Input
+          label="API Key"
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter your API key"
+        />
       </div>
 
       {/* Appearance Settings (Placeholder) */}

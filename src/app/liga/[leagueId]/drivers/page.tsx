@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
-import { Users, Plus, Edit2, Trash2, Check, X, Medal } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  Medal,
+  Loader2,
+} from "lucide-react";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
 import Input from "@/components/forms/Input";
@@ -15,37 +24,21 @@ import {
   TableHead,
   TableCell,
 } from "@/components/Table";
-import { getLeagueById } from "@/lib/mockData";
-import type { Driver } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import type { LeagueDetailDTO, DriverDTO } from "@/server/domain/dto";
 
 export default function DriversPage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
-  const league = getLeagueById(leagueId);
 
-  if (!league) {
-    notFound();
-  }
-
-  // Get the active season (or the most recent one)
-  const activeSeason =
-    league.seasons.find((s) => s.isActive) ||
-    league.seasons[league.seasons.length - 1];
-
-  if (!activeSeason) {
-    notFound();
-  }
-
-  const baseId = useId();
-  const [driverIdCounter, setDriverIdCounter] = useState(
-    activeSeason.drivers.length,
-  );
-
-  // Local drivers state (copy of season drivers for editing)
-  const [drivers, setDrivers] = useState<Driver[]>([...activeSeason.drivers]);
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [drivers, setDrivers] = useState<DriverDTO[]>([]);
+  const [seasonId, setSeasonId] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   // Edit modal state
-  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [editingDriver, setEditingDriver] = useState<DriverDTO | null>(null);
   const [editName, setEditName] = useState("");
 
   // Add driver state
@@ -60,17 +53,51 @@ export default function DriversPage() {
   const [editError, setEditError] = useState("");
 
   // Delete confirmation state
-  const [deleteConfirm, setDeleteConfirm] = useState<Driver | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DriverDTO | null>(null);
 
   // Error message for delete
   const [deleteError, setDeleteError] = useState("");
+
+  // Load league and drivers
+  useEffect(() => {
+    api.leagues
+      .get(leagueId)
+      .then(async (leagueData) => {
+        setLeague(leagueData);
+        const activeSeason =
+          leagueData.seasons.find((s) => s.isActive) ||
+          leagueData.seasons[leagueData.seasons.length - 1];
+        if (activeSeason) {
+          setSeasonId(activeSeason.id);
+          const driversData = await api.drivers.list(leagueId, activeSeason.id);
+          setDrivers(driversData);
+        }
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setPageError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(""), 3000);
   };
 
-  const handleAddDriver = () => {
+  const reloadDrivers = async () => {
+    if (!seasonId) return;
+    try {
+      const data = await api.drivers.list(leagueId, seasonId);
+      setDrivers(data);
+    } catch {
+      // silently fail
+    }
+  };
+
+  const handleAddDriver = async () => {
     if (!newDriverName.trim()) {
       setAddError("Driver name is required");
       return;
@@ -85,28 +112,28 @@ export default function DriversPage() {
       return;
     }
 
-    const newDriver: Driver = {
-      id: `${baseId}-driver-${driverIdCounter}`,
-      name: newDriverName.trim(),
-      totalPoints: 0,
-      races: 0,
-      wins: 0,
-    };
-
-    setDrivers([...drivers, newDriver]);
-    setDriverIdCounter((c) => c + 1);
-    setNewDriverName("");
-    setShowAddForm(false);
-    setAddError("");
-    showSuccess(`${newDriver.name} has been added!`);
+    try {
+      const newDriver = await api.drivers.create(leagueId, seasonId, {
+        name: newDriverName.trim(),
+      });
+      setDrivers([...drivers, newDriver]);
+      setNewDriverName("");
+      setShowAddForm(false);
+      setAddError("");
+      showSuccess(`${newDriver.name} has been added!`);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to add driver";
+      setAddError(message);
+    }
   };
 
-  const handleEditDriver = (driver: Driver) => {
+  const handleEditDriver = (driver: DriverDTO) => {
     setEditingDriver(driver);
     setEditName(driver.name);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingDriver || !editName.trim()) return;
 
     if (
@@ -120,18 +147,23 @@ export default function DriversPage() {
       return;
     }
 
-    setDrivers(
-      drivers.map((d) =>
-        d.id === editingDriver.id ? { ...d, name: editName.trim() } : d,
-      ),
-    );
-    showSuccess(`Driver renamed to ${editName.trim()}`);
-    setEditingDriver(null);
-    setEditName("");
-    setEditError("");
+    try {
+      await api.drivers.update(leagueId, seasonId, editingDriver.id, {
+        name: editName.trim(),
+      });
+      showSuccess(`Driver renamed to ${editName.trim()}`);
+      setEditingDriver(null);
+      setEditName("");
+      setEditError("");
+      await reloadDrivers();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update driver";
+      setEditError(message);
+    }
   };
 
-  const handleDeleteDriver = (driver: Driver) => {
+  const handleDeleteDriver = (driver: DriverDTO) => {
     if (driver.races > 0) {
       setDeleteError(
         `Cannot delete ${driver.name} because they have participated in ${driver.races} race(s). This would affect race history.`,
@@ -143,12 +175,37 @@ export default function DriversPage() {
     setDeleteConfirm(driver);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteConfirm) return;
-    setDrivers(drivers.filter((d) => d.id !== deleteConfirm.id));
-    showSuccess(`${deleteConfirm.name} has been removed`);
-    setDeleteConfirm(null);
+    try {
+      await api.drivers.delete(leagueId, seasonId, deleteConfirm.id);
+      showSuccess(`${deleteConfirm.name} has been removed`);
+      setDeleteConfirm(null);
+      await reloadDrivers();
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete driver";
+      setDeleteError(message);
+      setDeleteConfirm(null);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (pageError || !league) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load drivers: {pageError}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
 
   // Sort drivers by points
   const sortedDrivers = [...drivers].sort(

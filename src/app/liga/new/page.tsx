@@ -80,7 +80,10 @@ export default function CreateLigaPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [createdLeagueId, setCreatedLeagueId] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: typeof errors = {};
@@ -105,7 +108,28 @@ export default function CreateLigaPage() {
       return;
     }
 
-    setShowSuccess(true);
+    setSubmitting(true);
+    try {
+      const { api } = await import("@/lib/api");
+      const league = await api.leagues.create({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        tracks: formData.tracks
+          .filter((t) => t.value.trim())
+          .map((t) => t.value.trim()),
+        drivers: formData.drivers
+          .filter((d) => d.value.trim())
+          .map((d) => ({ name: d.value.trim() })),
+      });
+      setCreatedLeagueId(league.id);
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create league";
+      setErrors({ name: message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (showSuccess) {
@@ -122,11 +146,16 @@ export default function CreateLigaPage() {
             Your new league has been set up successfully.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button href="/liga">View Leagues</Button>
+            <Button
+              href={createdLeagueId ? `/liga/${createdLeagueId}` : "/liga"}
+            >
+              View League
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {
                 setShowSuccess(false);
+                setCreatedLeagueId(null);
                 setFormData({
                   name: "",
                   description: "",
@@ -290,7 +319,9 @@ export default function CreateLigaPage() {
           <Button href="/liga" variant="secondary">
             Cancel
           </Button>
-          <Button type="submit">Create League</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Creating..." : "Create League"}
+          </Button>
         </div>
       </form>
     </div>

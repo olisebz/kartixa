@@ -1,13 +1,23 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import { useParams } from "next/navigation";
 import { notFound } from "next/navigation";
-import { Flag, Plus, X, Zap, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Flag,
+  Plus,
+  X,
+  Zap,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
 import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
-import { getLeagueById, POINTS_SYSTEM } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import { POINTS_SYSTEM } from "@/server/domain/constants";
+import type { LeagueDetailDTO, DriverDTO } from "@/server/domain/dto";
 
 interface RaceResultEntry {
   id: string;
@@ -20,18 +30,39 @@ interface RaceResultEntry {
 export default function NewRacePage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
-  const league = getLeagueById(leagueId);
 
-  if (!league) {
-    notFound();
-  }
+  const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
+  const [allDrivers, setAllDrivers] = useState<DriverDTO[]>([]);
+  const [seasonId, setSeasonId] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const baseId = useId();
   const [resultIdCounter, setResultIdCounter] = useState(0);
 
-  // Get active season and its drivers
-  const activeSeason = league.seasons.find((s) => s.isActive);
-  const allDrivers = activeSeason?.drivers || [];
+  // Load league and drivers
+  useEffect(() => {
+    api.leagues
+      .get(leagueId)
+      .then(async (leagueData) => {
+        setLeague(leagueData);
+        const activeSeason =
+          leagueData.seasons.find((s) => s.isActive) ||
+          leagueData.seasons[leagueData.seasons.length - 1];
+        if (activeSeason) {
+          setSeasonId(activeSeason.id);
+          const driversData = await api.drivers.list(leagueId, activeSeason.id);
+          setAllDrivers(driversData);
+        }
+      })
+      .catch((err) => {
+        if (err.status === 404) {
+          notFound();
+        }
+        setPageError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [leagueId]);
 
   const [raceName, setRaceName] = useState("");
   const [track, setTrack] = useState("");
@@ -56,7 +87,7 @@ export default function NewRacePage() {
   // Track options
   const trackOptions = [
     { value: "", label: "Select a track..." },
-    ...league.tracks.map((t) => ({ value: t, label: t })),
+    ...(league?.tracks || []).map((t) => ({ value: t, label: t })),
     { value: "__custom__", label: "+ Add new track" },
   ];
 
@@ -149,45 +180,43 @@ export default function NewRacePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [createdRaceId, setCreatedRaceId] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     const selectedTrack = track === "__custom__" ? customTrack : track;
 
-    // Build race data
-    const raceData = {
-      name: raceName,
-      track: selectedTrack,
-      date,
-      results: results.map((r) => {
-        const driver = allDrivers.find((d) => d.id === r.driverId);
-        const basePoints =
-          POINTS_SYSTEM[r.position as keyof typeof POINTS_SYSTEM] || 0;
-        // Fastest lap bonus: +1 point if in top 10
-        const fastestLapBonus = r.fastestLap && r.position <= 10 ? 1 : 0;
-        return {
+    setSubmitting(true);
+    try {
+      const race = await api.races.create(leagueId, seasonId, {
+        name: raceName,
+        track: selectedTrack,
+        date,
+        results: results.map((r) => ({
           driverId: r.driverId,
-          driverName: driver?.name || "",
           position: r.position,
-          points: basePoints + fastestLapBonus,
-          lapTime: r.lapTime || undefined,
+          lapTime: r.lapTime || null,
           fastestLap: r.fastestLap,
-        };
-      }),
-    };
-
-    // For now, just show success message
-    setShowSuccess(true);
-    // Store for potential use
-    void raceData;
+        })),
+      });
+      setCreatedRaceId(race.id);
+      setShowSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create race";
+      setErrors({ results: message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Calculate points including fastest lap bonus
   const getPointsWithBonus = (position: number, hasFastestLap: boolean) => {
-    const basePoints =
-      POINTS_SYSTEM[position as keyof typeof POINTS_SYSTEM] || 0;
+    const basePoints = POINTS_SYSTEM[position] || 0;
     const bonus = hasFastestLap && position <= 10 ? 1 : 0;
     return basePoints + bonus;
   };
@@ -210,12 +239,20 @@ export default function NewRacePage() {
             The race has been successfully recorded.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button href={`/liga/${leagueId}`} variant="secondary">
-              Back to League
+            <Button
+              href={
+                createdRaceId
+                  ? `/liga/${leagueId}/race/${createdRaceId}`
+                  : `/liga/${leagueId}`
+              }
+              variant="secondary"
+            >
+              View Race
             </Button>
             <Button
               onClick={() => {
                 setShowSuccess(false);
+                setCreatedRaceId(null);
                 setRaceName("");
                 setTrack("");
                 setCustomTrack("");
@@ -226,6 +263,23 @@ export default function NewRacePage() {
             </Button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
+
+  if (pageError || !league) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-600 mb-4">Failed to load: {pageError}</p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
@@ -246,7 +300,7 @@ export default function NewRacePage() {
           New Race
         </h1>
         <p className="text-[var(--color-muted)] mt-1">
-          Add a new race to {league.name}
+          Add a new race to {league?.name || "the league"}
         </p>
       </div>
 
@@ -508,8 +562,8 @@ export default function NewRacePage() {
           >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1">
-            Create Race
+          <Button type="submit" className="flex-1" disabled={submitting}>
+            {submitting ? "Creating..." : "Create Race"}
           </Button>
         </div>
       </form>
