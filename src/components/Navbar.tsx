@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Info, Trophy, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Info, Trophy, Settings, LogIn, LogOut } from "lucide-react";
 import { useLocale } from "@/LocaleContext";
+import { useAuth } from "@/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLocale();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const navLinks = [
     { href: "/about", label: t("nav.about"), icon: Info },
@@ -21,6 +24,11 @@ export default function Navbar() {
       return pathname === "/liga" || pathname.startsWith("/liga/");
     }
     return pathname === href;
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
   };
 
   return (
@@ -65,6 +73,30 @@ export default function Navbar() {
             );
           })}
         </div>
+      </div>
+
+      {/* Auth button - right side */}
+      <div className="ml-auto">
+        {isAuthenticated ? (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-[var(--color-muted)] hover:text-[var(--foreground)] hover:bg-[var(--color-card)] transition-colors"
+            title={user?.displayName ?? user?.email}
+          >
+            <span className="hidden sm:inline max-w-[120px] truncate">
+              {user?.displayName ?? user?.email}
+            </span>
+            <LogOut className="w-4 h-4" />
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            <span suppressHydrationWarning>{t("nav.login")}</span>
+          </Link>
+        )}
       </div>
     </nav>
   );

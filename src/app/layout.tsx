@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import FeedbackPopup from "@/components/FeedbackPopup";
 import { LocaleProvider } from "@/LocaleContext";
+import { AuthProvider } from "@/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,21 +35,23 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <LocaleProvider>
-          <div className="max-w-6xl mx-auto px-4">
-            <Navbar />
-            <main>{children}</main>
+          <AuthProvider>
+            <div className="max-w-6xl mx-auto px-4">
+              <Navbar />
+              <main>{children}</main>
 
-            <FeedbackPopup />
+              <FeedbackPopup />
 
-            <footer className="mt-16 py-8 border-t border-[var(--color-border)] text-center text-sm text-[var(--color-muted)]">
-              <p className="mb-2">
-                &copy; {new Date().getFullYear()} Kartixa • Created by{" "}
-                <span className="font-semibold text-[var(--foreground)]">
-                  <a href="https://github.com/olisebz">@olisebz</a>
-                </span>
-              </p>
-            </footer>
-          </div>
+              <footer className="mt-16 py-8 border-t border-[var(--color-border)] text-center text-sm text-[var(--color-muted)]">
+                <p className="mb-2">
+                  &copy; {new Date().getFullYear()} Kartixa • Created by{" "}
+                  <span className="font-semibold text-[var(--foreground)]">
+                    <a href="https://github.com/olisebz">@olisebz</a>
+                  </span>
+                </p>
+              </footer>
+            </div>
+          </AuthProvider>
         </LocaleProvider>
       </body>
     </html>
