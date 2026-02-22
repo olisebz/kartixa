@@ -20,7 +20,40 @@ import {
   timestamp,
   json,
   index,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
+
+// ============================================================================
+// USERS (Phase 2 — table exists but is not actively used yet)
+// ============================================================================
+
+export const users = mysqlTable(
+  "users",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    email: varchar("email", { length: 255 }).notNull(),
+    displayName: varchar("display_name", { length: 255 }).notNull(),
+    /** bcrypt/argon2 hash — never exposed via API */
+    passwordHash: varchar("password_hash", { length: 255 }),
+    /** "public" | "admin" — matches Role type */
+    role: varchar("role", { length: 20 }).notNull().default("public"),
+    /** Provider for future OAuth: "local" | "google" | "github" etc. */
+    authProvider: varchar("auth_provider", { length: 50 }).notNull().default("local"),
+    /** External provider user ID (Phase 2+) */
+    externalId: varchar("external_id", { length: 255 }),
+    /** Whether the user's email has been verified */
+    emailVerified: boolean("email_verified").notNull().default(false),
+    /** Soft-disable: block login without deleting data */
+    isActive: boolean("is_active").notNull().default(true),
+    lastLoginAt: timestamp("last_login_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_users_email").on(table.email),
+    index("idx_users_role").on(table.role),
+  ],
+);
 
 // ============================================================================
 // LEAGUES
@@ -31,6 +64,10 @@ export const leagues = mysqlTable("leagues", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull().default(""),
   tracks: json("tracks").notNull().$type<string[]>().default([]),
+  /** Phase 2: tracks which user created this league */
+  createdBy: varchar("created_by", { length: 36 }).references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
@@ -124,6 +161,7 @@ export const raceResults = mysqlTable(
 // TYPE EXPORTS (inferred from schema)
 // ============================================================================
 
+export type UserRow = typeof users.$inferSelect;
 export type LeagueRow = typeof leagues.$inferSelect;
 export type SeasonRow = typeof seasons.$inferSelect;
 export type DriverRow = typeof drivers.$inferSelect;
