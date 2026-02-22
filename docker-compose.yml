@@ -53,6 +53,8 @@ services:
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      JWT_SECRET: ${JWT_SECRET:-}
+      PASSWORD_PEPPER: ${PASSWORD_PEPPER:-}
 
 volumes:
   kartixa_db_data:
