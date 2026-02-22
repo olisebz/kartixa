@@ -42,6 +42,17 @@ export class ApiClientError extends Error {
   }
 }
 
+/**
+ * Optional function to get the current access token.
+ * Set by AuthProvider — allows token refresh before requests.
+ */
+let _getAccessToken: (() => Promise<string | null>) | null = null;
+
+/** Called by AuthProvider to wire up token retrieval */
+export function setTokenProvider(fn: () => Promise<string | null>) {
+  _getAccessToken = fn;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
@@ -53,12 +64,22 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Include API key if set (for write operations)
-  const apiKey = typeof window !== "undefined"
-    ? localStorage.getItem("kartixa_api_key")
-    : null;
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
+  // Prefer JWT Bearer token (from AuthContext)
+  if (_getAccessToken) {
+    const token = await _getAccessToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
+  // Fallback: include API key if set (for unauthenticated write operations)
+  if (!headers["Authorization"]) {
+    const apiKey = typeof window !== "undefined"
+      ? localStorage.getItem("kartixa_api_key")
+      : null;
+    if (apiKey) {
+      headers["X-API-Key"] = apiKey;
+    }
   }
 
   const res = await fetch(url, {
