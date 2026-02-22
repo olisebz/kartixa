@@ -6,7 +6,7 @@
  * - CORS
  * - Request size limits
  * - Structured logging
- * - Auth guard hook (Phase 2 ready)
+ * - Auth context resolution + role guard
  *
  * Usage in route.ts:
  *   export const GET = apiHandler({ handler: async (req, ctx) => { ... } });
@@ -19,6 +19,8 @@ import { errorResponse } from "../domain/dto";
 import { config } from "../config";
 import { logger } from "../logger";
 import { checkRateLimit } from "./rateLimit";
+import { resolveAuthContext, requireRole, requirePermission } from "../auth";
+import type { AuthContext, Permission } from "../auth";
 import type { Role } from "../domain/constants";
 
 // ============================================================================
@@ -27,6 +29,8 @@ import type { Role } from "../domain/constants";
 
 export interface RouteContext {
   params: Record<string, string>;
+  /** Auth context for the current request (Phase 1: always anonymous) */
+  auth: AuthContext;
 }
 
 export interface HandlerConfig<TBody = unknown> {
@@ -34,8 +38,10 @@ export interface HandlerConfig<TBody = unknown> {
   handler: (req: NextRequest, ctx: RouteContext, body: TBody) => Promise<NextResponse>;
   /** Zod schema for request body validation (POST/PUT/PATCH) */
   bodySchema?: ZodSchema<TBody>;
-  /** Required role (Phase 2). Currently: "public" = no auth, "admin" = API key */
+  /** Required role. "public" = no auth, "admin" = API key (Phase 1) / login (Phase 2) */
   role?: Role;
+  /** Required permission (more granular than role). Checked in addition to role. */
+  permission?: Permission;
   /** Maximum request body size in bytes (default: 100KB) */
   maxBodySize?: number;
 }
@@ -71,27 +77,6 @@ function applyCorsHeaders(req: NextRequest, response: NextResponse): void {
 }
 
 // ============================================================================
-// AUTH GUARD (Phase 1: API Key | Phase 2: JWT/Session ready)
-// ============================================================================
-
-function checkAuth(req: NextRequest, role: Role): void {
-  // Phase 2: If auth is enabled, check JWT/session here
-  if (config.authEnabled) {
-    // TODO Phase 2: Implement JWT/session verification
-    // For now, fall through to API key check
-  }
-
-  // Phase 1: "admin" role requires API key for write operations
-  if (role === "admin" && config.apiKey) {
-    const providedKey = req.headers.get("x-api-key");
-    if (providedKey !== config.apiKey) {
-      throw new AppError("UNAUTHORIZED", "Valid API key required for this operation");
-    }
-  }
-  // "public" role: no auth needed
-}
-
-// ============================================================================
 // HANDLER FACTORY
 // ============================================================================
 
@@ -101,7 +86,6 @@ export function apiHandler<TBody = unknown>(cfg: HandlerConfig<TBody>) {
 
     // Resolve params (Next.js 16 async params)
     const params = await routeCtx.params;
-    const ctx: RouteContext = { params };
 
     // Build response with headers applied at the end
     try {
@@ -122,8 +106,15 @@ export function apiHandler<TBody = unknown>(cfg: HandlerConfig<TBody>) {
         return res;
       }
 
-      // 2. Auth check
-      checkAuth(req, cfg.role ?? "public");
+      // 2. Auth: resolve context + check role + permission
+      const authCtx = await resolveAuthContext(req);
+      requireRole(req, authCtx, cfg.role ?? "public");
+      if (cfg.permission) {
+        requirePermission(req, authCtx, cfg.permission);
+      }
+
+      // Build route context (params + auth)
+      const ctx: RouteContext = { params, auth: authCtx };
 
       // 3. Body parsing + validation
       let body = undefined as TBody;
