@@ -51,4 +51,44 @@ export const config = {
 
   /** Phase 2: Auth feature flag */
   authEnabled: envBool("AUTH_ENABLED", false),
+
+  auth: {
+    /** JWT signing secret (min 32 chars). Required when AUTH_ENABLED=true */
+    jwtSecret: env("JWT_SECRET", ""),
+    /** HMAC pepper for password hashing. Optional but strongly recommended. */
+    pepperSecret: env("PASSWORD_PEPPER", ""),
+  },
 } as const;
+
+// ============================================================================
+// STARTUP VALIDATION
+// ============================================================================
+
+if (config.isProd && config.apiKey && config.apiKey.length < 32) {
+  console.warn(
+    "[SECURITY] API_KEY is shorter than 32 characters. " +
+    "Use a strong key: openssl rand -base64 32",
+  );
+}
+
+if (config.isProd && !config.apiKey && !config.authEnabled) {
+  console.warn(
+    "[SECURITY] Neither API_KEY nor AUTH_ENABLED is set in production. " +
+    "All write endpoints are unprotected!",
+  );
+}
+
+if (config.authEnabled) {
+  if (!config.auth.jwtSecret || config.auth.jwtSecret.length < 32) {
+    throw new Error(
+      "[SECURITY] AUTH_ENABLED=true requires JWT_SECRET (min 32 chars). " +
+      "Generate one: openssl rand -base64 48",
+    );
+  }
+  if (config.isProd && !config.auth.pepperSecret) {
+    console.warn(
+      "[SECURITY] PASSWORD_PEPPER is not set. Passwords are hashed without pepper. " +
+      "Generate one: openssl rand -base64 32",
+    );
+  }
+}
