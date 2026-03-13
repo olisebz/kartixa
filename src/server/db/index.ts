@@ -23,8 +23,7 @@ function getPool(): mysql.Pool {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      // Security: reject unauthorized SSL in prod
-      ...(config.isProd ? { ssl: { rejectUnauthorized: true } } : {}),
+      ...(config.db.ssl ? { ssl: { rejectUnauthorized: true } } : {}),
     });
     logger.info("MariaDB connection pool created", {
       host: config.db.host,
