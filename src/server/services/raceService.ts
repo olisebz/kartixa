@@ -4,13 +4,66 @@
  */
 
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getDb } from "../db";
-import { races, raceResults, seasons, drivers, leagues } from "../db/schema";
+import { races, raceResults, raceResultPenalties, seasons, drivers, teams } from "../db/schema";
 import { NotFoundError, ValidationError } from "../domain/errors";
-import { calculatePoints } from "../domain/constants";
+import {
+  calculatePoints,
+  UNKNOWN_DRIVER_NAME,
+  UNKNOWN_DRIVER_NUMBER,
+  UNKNOWN_DRIVER_TOKEN,
+} from "../domain/constants";
 import type { CreateRaceInput, UpdateRaceInput } from "../domain/schemas";
 import type { RaceListDTO, RaceDetailDTO, RaceResultDTO } from "../domain/dto";
+
+function calculatePointsAfterPenalties(input: {
+  position: number;
+  fastestLap: boolean;
+  isUnknownDriver: boolean;
+  dnf: boolean;
+  penalties: { type: "seconds" | "grid" | "points"; value: number }[];
+}): number {
+  if (input.isUnknownDriver || input.dnf) {
+    return 0;
+  }
+
+  const basePoints = calculatePoints(input.position, input.fastestLap);
+  const pointsPenalty = input.penalties
+    .filter((penalty) => penalty.type === "points")
+    .reduce((sum, penalty) => sum + penalty.value, 0);
+
+  return basePoints - pointsPenalty;
+}
+
+async function getOrCreateUnknownDriverId(seasonId: string): Promise<string> {
+  const db = getDb();
+
+  const [existing] = await db
+    .select({ id: drivers.id })
+    .from(drivers)
+    .where(
+      and(
+        eq(drivers.seasonId, seasonId),
+        eq(drivers.name, UNKNOWN_DRIVER_NAME),
+        eq(drivers.driverNumber, UNKNOWN_DRIVER_NUMBER)
+      )
+    );
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const id = uuidv4();
+  await db.insert(drivers).values({
+    id,
+    seasonId,
+    name: UNKNOWN_DRIVER_NAME,
+    driverNumber: UNKNOWN_DRIVER_NUMBER,
+  });
+
+  return id;
+}
 
 export const raceService = {
   /** List races for a season */
@@ -89,17 +142,43 @@ export const raceService = {
     const resultDTOs: RaceResultDTO[] = [];
     for (const r of results) {
       const [driver] = await db
-        .select({ name: drivers.name })
+        .select({ name: drivers.name, number: drivers.driverNumber })
         .from(drivers)
         .where(eq(drivers.id, r.driverId));
 
+      const [team] = r.teamId
+        ? await db
+            .select({ id: teams.id, name: teams.name })
+            .from(teams)
+            .where(eq(teams.id, r.teamId))
+        : [];
+
+      const penalties = await db
+        .select()
+        .from(raceResultPenalties)
+        .where(eq(raceResultPenalties.raceResultId, r.id));
+
+      const isUnknownDriver =
+        (driver?.name ?? null) === UNKNOWN_DRIVER_NAME &&
+        (driver?.number ?? null) === UNKNOWN_DRIVER_NUMBER;
+
       resultDTOs.push({
-        driverId: r.driverId,
-        driverName: driver?.name ?? "Unknown",
+        driverId: isUnknownDriver ? UNKNOWN_DRIVER_TOKEN : r.driverId,
+        driverName: isUnknownDriver ? UNKNOWN_DRIVER_NAME : driver?.name ?? "Unknown",
+        teamId: r.teamId,
+        teamName: team?.name ?? null,
         position: r.position,
         points: r.points,
         lapTime: r.lapTime,
         fastestLap: r.fastestLap,
+        dnf: r.dnf,
+        penalties: penalties.map((penalty) => ({
+          id: penalty.id,
+          type: penalty.penaltyType as "seconds" | "grid" | "points",
+          value: penalty.penaltyValue,
+          note: penalty.note,
+          createdAt: penalty.createdAt?.toISOString() ?? new Date().toISOString(),
+        })),
       });
     }
 
@@ -127,15 +206,23 @@ export const raceService = {
       .where(and(eq(seasons.id, seasonId), eq(seasons.leagueId, leagueId)));
     if (!season) throw new NotFoundError("Season", seasonId);
 
+    const driverTeamById = new Map<string, string | null>();
+
     // Verify all drivers exist and belong to this season
     for (const result of input.results) {
+      if (result.driverId === UNKNOWN_DRIVER_TOKEN) {
+        continue;
+      }
+
       const [driver] = await db
-        .select({ id: drivers.id })
+        .select({ id: drivers.id, currentTeamId: drivers.currentTeamId })
         .from(drivers)
         .where(and(eq(drivers.id, result.driverId), eq(drivers.seasonId, seasonId)));
       if (!driver) {
         throw new ValidationError(`Driver '${result.driverId}' not found in this season`);
       }
+
+      driverTeamById.set(driver.id, driver.currentTeamId);
     }
 
     const raceId = uuidv4();
@@ -148,18 +235,62 @@ export const raceService = {
     });
 
     // Insert results with computed points
-    const resultValues = input.results.map((r) => ({
-      id: uuidv4(),
-      raceId,
-      driverId: r.driverId,
-      position: r.position,
-      points: calculatePoints(r.position, r.fastestLap),
-      lapTime: r.lapTime ?? null,
-      fastestLap: r.fastestLap,
-    }));
+    const unknownDriverId = input.results.some((r) => r.driverId === UNKNOWN_DRIVER_TOKEN)
+      ? await getOrCreateUnknownDriverId(seasonId)
+      : null;
+
+    const normalizedResults = input.results.map((r) => {
+      const penalties = r.penalties ?? [];
+      const isUnknownDriver = r.driverId === UNKNOWN_DRIVER_TOKEN;
+      const dnf = r.dnf ?? false;
+      const fastestLap = dnf ? false : r.fastestLap;
+      return {
+        ...r,
+        penalties,
+        isUnknownDriver,
+        dnf,
+        fastestLap,
+      };
+    });
+
+    const resultValues = normalizedResults.map((r) => {
+      const resultId = uuidv4();
+      return {
+        id: resultId,
+        raceId,
+        driverId: r.isUnknownDriver ? (unknownDriverId as string) : r.driverId,
+        teamId: r.isUnknownDriver ? null : (driverTeamById.get(r.driverId) ?? null),
+        position: r.position,
+        points: calculatePointsAfterPenalties({
+          position: r.position,
+          fastestLap: r.fastestLap,
+          isUnknownDriver: r.isUnknownDriver,
+          dnf: r.dnf,
+          penalties: r.penalties,
+        }),
+        lapTime: r.lapTime ?? null,
+        fastestLap: r.fastestLap,
+        dnf: r.dnf,
+      };
+    });
 
     if (resultValues.length > 0) {
       await db.insert(raceResults).values(resultValues);
+
+      const penaltyValues = normalizedResults.flatMap((result, index) => {
+        const raceResultId = resultValues[index].id;
+        return result.penalties.map((penalty) => ({
+          id: uuidv4(),
+          raceResultId,
+          penaltyType: penalty.type,
+          penaltyValue: penalty.value,
+          note: penalty.note ?? null,
+        }));
+      });
+
+      if (penaltyValues.length > 0) {
+        await db.insert(raceResultPenalties).values(penaltyValues);
+      }
     }
 
     return this.getById(leagueId, raceId);
@@ -195,32 +326,84 @@ export const raceService = {
 
     // Replace results if provided
     if (input.results) {
+      const driverTeamById = new Map<string, string | null>();
+
       // Verify all drivers
       for (const result of input.results) {
+        if (result.driverId === UNKNOWN_DRIVER_TOKEN) {
+          continue;
+        }
+
         const [driver] = await db
-          .select({ id: drivers.id })
+          .select({ id: drivers.id, currentTeamId: drivers.currentTeamId })
           .from(drivers)
           .where(and(eq(drivers.id, result.driverId), eq(drivers.seasonId, race.seasonId)));
         if (!driver) {
           throw new ValidationError(`Driver '${result.driverId}' not found in this season`);
         }
+
+        driverTeamById.set(driver.id, driver.currentTeamId);
       }
 
       // Delete old results and insert new ones
       await db.delete(raceResults).where(eq(raceResults.raceId, raceId));
 
-      const resultValues = input.results.map((r) => ({
-        id: uuidv4(),
-        raceId,
-        driverId: r.driverId,
-        position: r.position,
-        points: calculatePoints(r.position, r.fastestLap),
-        lapTime: r.lapTime ?? null,
-        fastestLap: r.fastestLap,
-      }));
+      const unknownDriverId = input.results.some((r) => r.driverId === UNKNOWN_DRIVER_TOKEN)
+        ? await getOrCreateUnknownDriverId(race.seasonId)
+        : null;
+
+      const normalizedResults = input.results.map((r) => {
+        const penalties = r.penalties ?? [];
+        const isUnknownDriver = r.driverId === UNKNOWN_DRIVER_TOKEN;
+        const dnf = r.dnf ?? false;
+        const fastestLap = dnf ? false : r.fastestLap;
+        return {
+          ...r,
+          penalties,
+          isUnknownDriver,
+          dnf,
+          fastestLap,
+        };
+      });
+
+      const resultValues = normalizedResults.map((r) => {
+        const resultId = uuidv4();
+        return {
+          id: resultId,
+          raceId,
+          driverId: r.isUnknownDriver ? (unknownDriverId as string) : r.driverId,
+          teamId: r.isUnknownDriver ? null : (driverTeamById.get(r.driverId) ?? null),
+          position: r.position,
+          points: calculatePointsAfterPenalties({
+            position: r.position,
+            fastestLap: r.fastestLap,
+            isUnknownDriver: r.isUnknownDriver,
+            dnf: r.dnf,
+            penalties: r.penalties,
+          }),
+          lapTime: r.lapTime ?? null,
+          fastestLap: r.fastestLap,
+          dnf: r.dnf,
+        };
+      });
 
       if (resultValues.length > 0) {
         await db.insert(raceResults).values(resultValues);
+
+        const penaltyValues = normalizedResults.flatMap((result, index) => {
+          const raceResultId = resultValues[index].id;
+          return result.penalties.map((penalty) => ({
+            id: uuidv4(),
+            raceResultId,
+            penaltyType: penalty.type,
+            penaltyValue: penalty.value,
+            note: penalty.note ?? null,
+          }));
+        });
+
+        if (penaltyValues.length > 0) {
+          await db.insert(raceResultPenalties).values(penaltyValues);
+        }
       }
     }
 

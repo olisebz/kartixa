@@ -8,12 +8,13 @@ import { apiHandler, optionsHandler } from "@/server/middleware/apiHandler";
 import { driverService } from "@/server/services/driverService";
 import { updateDriverSchema, type UpdateDriverInput } from "@/server/domain/schemas";
 import { successResponse } from "@/server/domain/dto";
-import { ROLES } from "@/server/domain/constants";
+import { requireLeagueRole, requireUserId } from "@/server/auth/guards";
 
 export const PATCH = apiHandler<UpdateDriverInput>({
-  role: ROLES.ADMIN,
   bodySchema: updateDriverSchema,
   handler: async (_req, ctx, body) => {
+    const userId = await requireUserId();
+    await requireLeagueRole(ctx.params.leagueId, userId, "admin");
     const driver = await driverService.update(
       ctx.params.leagueId,
       ctx.params.seasonId,
@@ -25,8 +26,9 @@ export const PATCH = apiHandler<UpdateDriverInput>({
 });
 
 export const DELETE = apiHandler({
-  role: ROLES.ADMIN,
   handler: async (_req, ctx) => {
+    const userId = await requireUserId();
+    await requireLeagueRole(ctx.params.leagueId, userId, "admin");
     await driverService.delete(
       ctx.params.leagueId,
       ctx.params.seasonId,

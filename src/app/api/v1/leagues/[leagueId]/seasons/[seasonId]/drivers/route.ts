@@ -8,10 +8,12 @@ import { apiHandler, optionsHandler } from "@/server/middleware/apiHandler";
 import { driverService } from "@/server/services/driverService";
 import { createDriverSchema, type CreateDriverInput } from "@/server/domain/schemas";
 import { successResponse } from "@/server/domain/dto";
-import { ROLES } from "@/server/domain/constants";
+import { requireLeagueRole, requireUserId } from "@/server/auth/guards";
 
 export const GET = apiHandler({
   handler: async (_req, ctx) => {
+    const userId = await requireUserId();
+    await requireLeagueRole(ctx.params.leagueId, userId, "member");
     const drivers = await driverService.listBySeason(
       ctx.params.leagueId,
       ctx.params.seasonId
@@ -21,9 +23,10 @@ export const GET = apiHandler({
 });
 
 export const POST = apiHandler<CreateDriverInput>({
-  role: ROLES.ADMIN,
   bodySchema: createDriverSchema,
   handler: async (_req, ctx, body) => {
+    const userId = await requireUserId();
+    await requireLeagueRole(ctx.params.leagueId, userId, "admin");
     const driver = await driverService.create(
       ctx.params.leagueId,
       ctx.params.seasonId,

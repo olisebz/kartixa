@@ -8,20 +8,21 @@ import { apiHandler, optionsHandler } from "@/server/middleware/apiHandler";
 import { leagueService } from "@/server/services/leagueService";
 import { createLeagueSchema, type CreateLeagueInput } from "@/server/domain/schemas";
 import { successResponse } from "@/server/domain/dto";
-import { ROLES } from "@/server/domain/constants";
+import { requireUserId } from "@/server/auth/guards";
 
 export const GET = apiHandler({
   handler: async () => {
-    const leagues = await leagueService.list();
+    const userId = await requireUserId();
+    const leagues = await leagueService.list(userId);
     return NextResponse.json(successResponse(leagues));
   },
 });
 
 export const POST = apiHandler<CreateLeagueInput>({
-  role: ROLES.ADMIN,
   bodySchema: createLeagueSchema,
   handler: async (_req, _ctx, body) => {
-    const league = await leagueService.create(body);
+    const userId = await requireUserId();
+    const league = await leagueService.create(body, userId);
     return NextResponse.json(successResponse(league), { status: 201 });
   },
 });
