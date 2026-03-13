@@ -19,6 +19,15 @@ export const POINTS_SYSTEM: Record<number, number> = {
 /** Bonus point for fastest lap (only if driver finishes in top 10) */
 export const FASTEST_LAP_BONUS = 1;
 
+/** Special placeholder driver token for non-league participants in race results */
+export const UNKNOWN_DRIVER_TOKEN = "__unknown__";
+
+/** Reserved display name for placeholder race participants */
+export const UNKNOWN_DRIVER_NAME = "Unknown Driver";
+
+/** Reserved number for placeholder race participants */
+export const UNKNOWN_DRIVER_NUMBER = 0;
+
 /** Get points for a position + optional fastest lap bonus */
 export function calculatePoints(position: number, fastestLap: boolean): number {
   const base = POINTS_SYSTEM[position] ?? 0;
@@ -30,10 +39,13 @@ export function calculatePoints(position: number, fastestLap: boolean): number {
 export const MAX_PAGE_SIZE = 100;
 export const DEFAULT_PAGE_SIZE = 50;
 
-/** Role definitions for Phase 2 auth */
-export const ROLES = {
-  PUBLIC: "public",
+/** League membership roles (per league) */
+export const LEAGUE_ROLES = {
+  OWNER: "owner",
   ADMIN: "admin",
+  MEMBER: "member",
 } as const;
 
-export type Role = (typeof ROLES)[keyof typeof ROLES];
+export type LeagueRole = (typeof LEAGUE_ROLES)[keyof typeof LEAGUE_ROLES];
+
+
