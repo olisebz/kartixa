@@ -1,11 +1,11 @@
 /**
- * Next.js Middleware — Global security headers + CORS for API routes.
+ * Next.js Proxy — Global security headers + CORS for API routes.
  * Runs on every request before reaching route handlers.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const isProd = process.env.NODE_ENV === "production";
 
