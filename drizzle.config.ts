@@ -1,6 +1,4 @@
-import { defineConfig } from "drizzle-kit";
-
-export default defineConfig({
+export default {
   schema: "./src/server/db/schema.ts",
   out: "./drizzle",
   dialect: "mysql",
@@ -11,4 +9,4 @@ export default defineConfig({
     password: process.env.DATABASE_PASSWORD ?? "kartixa_dev",
     database: process.env.DATABASE_NAME ?? "kartixa",
   },
-});
+};
