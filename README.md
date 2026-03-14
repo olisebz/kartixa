@@ -70,14 +70,6 @@ AUTH_TRUSTED_DEVICE_RETENTION_DAYS=180
 AUTH_CHALLENGE_RETENTION_DAYS=7
 ```
 
-### Datenschutz-Hinweis (technisch)
-
-- Standardmäßig speichert Kartixa **keine vollständige IP-Adresse** in Auth-Sessions.
-- Falls aktiviert, wird die IP nur **anonymisiert** gespeichert (IPv4 auf /24, IPv6 auf /64).
-- User-Agent-Daten werden auf eine kurze, notwendige Länge begrenzt.
-- Abgelaufene/verbrauchte Verifizierungsdaten, alte Session-Metadaten und veraltete Geräte-Daten werden automatisch nach konfigurierbarer Frist gelöscht.
-- Für DSGVO/Impressum/Verarbeitungsverzeichnis brauchst du zusätzlich rechtliche Texte und Prozesse auf Betreiberseite.
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
