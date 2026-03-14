@@ -34,7 +34,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <LocaleProvider>
-          <div className="max-w-6xl mx-auto px-4">
+          <div className="max-w-6xl mx-auto px-4 pb-20 sm:pb-0">
             <Navbar />
             <main>{children}</main>
 

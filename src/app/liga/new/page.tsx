@@ -25,6 +25,7 @@ export default function CreateLigaPage() {
     name: "",
     description: "",
     tracks: [{ id: `${baseId}-track-0`, value: "" }] as ListItem[],
+    teams: [{ id: `${baseId}-team-0`, value: "" }] as ListItem[],
     drivers: [{ id: `${baseId}-driver-0`, value: "" }] as ListItem[],
   });
 
@@ -62,6 +63,30 @@ export default function CreateLigaPage() {
     setFormData((prev) => ({
       ...prev,
       tracks: [...prev.tracks, { id: generateId(), value: "" }],
+    }));
+  };
+
+  const handleAddTeam = () => {
+    setFormData((prev) => ({
+      ...prev,
+      teams: [...prev.teams, { id: generateId(), value: "" }],
+    }));
+  };
+
+  const handleRemoveTeam = (id: string) => {
+    if (formData.teams.length <= 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      teams: prev.teams.filter((team) => team.id !== id),
+    }));
+  };
+
+  const handleTeamChange = (id: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((team) =>
+        team.id === id ? { ...team, value } : team,
+      ),
     }));
   };
 
@@ -117,6 +142,9 @@ export default function CreateLigaPage() {
         tracks: formData.tracks
           .filter((t) => t.value.trim())
           .map((t) => t.value.trim()),
+        teams: formData.teams
+          .filter((team) => team.value.trim())
+          .map((team) => team.value.trim()),
         drivers: formData.drivers
           .filter((d) => d.value.trim())
           .map((d) => ({ name: d.value.trim() })),
@@ -160,6 +188,7 @@ export default function CreateLigaPage() {
                   name: "",
                   description: "",
                   tracks: [{ id: `${baseId}-track-0`, value: "" }],
+                  teams: [{ id: `${baseId}-team-0`, value: "" }],
                   drivers: [{ id: `${baseId}-driver-0`, value: "" }],
                 });
                 setErrors({});
@@ -255,6 +284,50 @@ export default function CreateLigaPage() {
                     onClick={() => handleRemoveDriver(driver.id)}
                     className="mt-7 px-3 py-2 text-[var(--color-error,#dc2626)] hover:bg-[var(--color-card-hover)] rounded-lg transition-colors"
                     aria-label={`Remove driver ${index + 1}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-[var(--color-card)] rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              Teams
+            </h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddTeam}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Team
+            </Button>
+          </div>
+          <p className="text-sm text-[var(--color-muted)]">
+            Optional: add teams for this league.
+          </p>
+          <div className="space-y-3">
+            {formData.teams.map((team, index) => (
+              <div key={team.id} className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    label={`Team ${index + 1}`}
+                    placeholder="Team name"
+                    value={team.value}
+                    onChange={(e) => handleTeamChange(team.id, e.target.value)}
+                  />
+                </div>
+                {formData.teams.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTeam(team.id)}
+                    className="mt-7 px-3 py-2 text-[var(--color-error,#dc2626)] hover:bg-[var(--color-card-hover)] rounded-lg transition-colors"
+                    aria-label={`Remove team ${index + 1}`}
                   >
                     <X className="w-5 h-5" />
                   </button>

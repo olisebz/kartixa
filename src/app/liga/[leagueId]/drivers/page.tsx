@@ -16,6 +16,7 @@ import {
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
 import Input from "@/components/forms/Input";
+import Select from "@/components/forms/Select";
 import {
   Table,
   TableHeader,
@@ -25,11 +26,13 @@ import {
   TableCell,
 } from "@/components/Table";
 import { api } from "@/lib/api";
+import { useLocale } from "@/LocaleContext";
 import type { LeagueDetailDTO, DriverDTO } from "@/server/domain/dto";
 
 export default function DriversPage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
+  const { t, locale } = useLocale();
 
   const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
   const [drivers, setDrivers] = useState<DriverDTO[]>([]);
@@ -40,10 +43,14 @@ export default function DriversPage() {
   // Edit modal state
   const [editingDriver, setEditingDriver] = useState<DriverDTO | null>(null);
   const [editName, setEditName] = useState("");
+  const [editNumber, setEditNumber] = useState("");
+  const [editTeamId, setEditTeamId] = useState("");
 
   // Add driver state
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDriverName, setNewDriverName] = useState("");
+  const [newDriverNumber, setNewDriverNumber] = useState("");
+  const [newDriverTeamId, setNewDriverTeamId] = useState("");
   const [addError, setAddError] = useState("");
 
   // Success message
@@ -64,6 +71,11 @@ export default function DriversPage() {
       .get(leagueId)
       .then(async (leagueData) => {
         setLeague(leagueData);
+        if (leagueData.currentUserRole === "member") {
+          setPageError(t("common.insufficientPermissions"));
+          return;
+        }
+
         const activeSeason =
           leagueData.seasons.find((s) => s.isActive) ||
           leagueData.seasons[leagueData.seasons.length - 1];
@@ -92,14 +104,16 @@ export default function DriversPage() {
     try {
       const data = await api.drivers.list(leagueId, seasonId);
       setDrivers(data);
-    } catch {
-      // silently fail
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : t("common.failedLoad");
+      setDeleteError(message);
     }
   };
 
   const handleAddDriver = async () => {
     if (!newDriverName.trim()) {
-      setAddError("Driver name is required");
+      setAddError(t("drivers.nameRequired"));
       return;
     }
 
@@ -108,22 +122,35 @@ export default function DriversPage() {
         (d) => d.name.toLowerCase() === newDriverName.trim().toLowerCase(),
       )
     ) {
-      setAddError("A driver with this name already exists");
+      setAddError(t("drivers.nameExists"));
       return;
     }
 
     try {
+      const parsedNumber = newDriverNumber.trim()
+        ? Number.parseInt(newDriverNumber.trim(), 10)
+        : undefined;
+
+      if (parsedNumber !== undefined && Number.isNaN(parsedNumber)) {
+        setAddError(t("drivers.invalidNumber"));
+        return;
+      }
+
       const newDriver = await api.drivers.create(leagueId, seasonId, {
         name: newDriverName.trim(),
+        ...(parsedNumber ? { number: parsedNumber } : {}),
+        ...(newDriverTeamId ? { teamId: newDriverTeamId } : {}),
       });
       setDrivers([...drivers, newDriver]);
       setNewDriverName("");
+      setNewDriverNumber("");
+      setNewDriverTeamId("");
       setShowAddForm(false);
       setAddError("");
       showSuccess(`${newDriver.name} has been added!`);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Failed to add driver";
+        err instanceof Error ? err.message : t("common.failedLoad");
       setAddError(message);
     }
   };
@@ -131,6 +158,8 @@ export default function DriversPage() {
   const handleEditDriver = (driver: DriverDTO) => {
     setEditingDriver(driver);
     setEditName(driver.name);
+    setEditNumber(String(driver.number));
+    setEditTeamId(driver.teamId ?? "");
   };
 
   const handleSaveEdit = async () => {
@@ -143,31 +172,40 @@ export default function DriversPage() {
           d.name.toLowerCase() === editName.trim().toLowerCase(),
       )
     ) {
-      setEditError("A driver with this name already exists");
+      setEditError(t("drivers.nameExists"));
       return;
     }
 
     try {
+      const parsedNumber = Number.parseInt(editNumber.trim(), 10);
+
+      if (Number.isNaN(parsedNumber)) {
+        setEditError(t("drivers.invalidNumber"));
+        return;
+      }
+
       await api.drivers.update(leagueId, seasonId, editingDriver.id, {
         name: editName.trim(),
+        number: parsedNumber,
+        teamId: editTeamId || null,
       });
       showSuccess(`Driver renamed to ${editName.trim()}`);
       setEditingDriver(null);
       setEditName("");
+      setEditNumber("");
+      setEditTeamId("");
       setEditError("");
       await reloadDrivers();
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Failed to update driver";
+        err instanceof Error ? err.message : t("common.failedLoad");
       setEditError(message);
     }
   };
 
   const handleDeleteDriver = (driver: DriverDTO) => {
     if (driver.races > 0) {
-      setDeleteError(
-        `Cannot delete ${driver.name} because they have participated in ${driver.races} race(s). This would affect race history.`,
-      );
+      setDeleteError(t("drivers.cannotDelete"));
       setTimeout(() => setDeleteError(""), 5000);
       return;
     }
@@ -184,7 +222,7 @@ export default function DriversPage() {
       await reloadDrivers();
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Failed to delete driver";
+        err instanceof Error ? err.message : t("common.failedLoad");
       setDeleteError(message);
       setDeleteConfirm(null);
     }
@@ -201,8 +239,12 @@ export default function DriversPage() {
   if (pageError || !league) {
     return (
       <div className="py-8 text-center">
-        <p className="text-red-600 mb-4">Failed to load drivers: {pageError}</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
+        <p className="text-red-600 mb-4">
+          {t("common.failedLoad")}: {pageError}
+        </p>
+        <Button onClick={() => window.location.reload()}>
+          {t("common.retry")}
+        </Button>
       </div>
     );
   }
@@ -211,33 +253,39 @@ export default function DriversPage() {
   const sortedDrivers = [...drivers].sort(
     (a, b) => b.totalPoints - a.totalPoints,
   );
+  const teamOptions = [
+    { value: "", label: t("teams.none") },
+    ...(league.teams ?? [])
+      .filter((team) => team.isActive)
+      .map((team) => ({ value: team.id, label: team.name })),
+  ];
 
   return (
-    <div className="py-8">
+    <div className="py-4 sm:py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Button
           href={`/liga/${leagueId}`}
           variant="secondary"
           size="sm"
           className="mb-4"
         >
-          ← Back to League
+          {t("race.backToLeague")}
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--foreground)] flex items-center gap-2">
               <Users className="w-8 h-8" />
-              Manage Drivers
+              {t("drivers.manage")}
             </h1>
             <p className="text-[var(--color-muted)] mt-1">
-              {league.name} • {drivers.length} driver
-              {drivers.length !== 1 && "s"}
+              {league.name} • {drivers.length}{" "}
+              {t("league.drivers").toLowerCase()}
             </p>
           </div>
           <Button onClick={() => setShowAddForm(true)}>
             <Plus className="w-5 h-5 mr-2" />
-            Add Driver
+            {t("drivers.add")}
           </Button>
         </div>
       </div>
@@ -261,7 +309,7 @@ export default function DriversPage() {
       <Modal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
-        title="Delete Driver?"
+        title={t("drivers.deleteConfirmTitle")}
         footer={
           <div className="flex gap-4">
             <Button
@@ -269,20 +317,19 @@ export default function DriversPage() {
               className="flex-1"
               onClick={() => setDeleteConfirm(null)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               className="flex-1 bg-[var(--color-delete)] hover:bg-red-700"
               onClick={confirmDelete}
             >
-              Delete
+              {t("common.delete")}
             </Button>
           </div>
         }
       >
         <p className="text-[var(--color-muted)]">
-          Are you sure you want to remove <strong>{deleteConfirm?.name}</strong>{" "}
-          from this league? This action cannot be undone.
+          {t("drivers.deleteConfirmMsg")}
         </p>
       </Modal>
 
@@ -290,31 +337,52 @@ export default function DriversPage() {
       {showAddForm && (
         <div className="mb-6 bg-[var(--color-card)] rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
-            Add New Driver
+            {t("drivers.addNew")}
           </h2>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+          <div className="flex gap-4 items-end flex-wrap sm:flex-nowrap">
+            <div className="flex-1 min-w-[160px]">
               <Input
-                label="Driver Name"
+                label={t("drivers.driverName")}
                 value={newDriverName}
                 onChange={(e) => {
                   setNewDriverName(e.target.value);
                   setAddError("");
                 }}
-                placeholder="Enter driver name"
+                placeholder={t("drivers.driverName")}
                 error={addError}
               />
             </div>
-            <Button onClick={handleAddDriver}>Add</Button>
+            <div className="w-36">
+              <Input
+                label={t("drivers.number")}
+                type="number"
+                min="1"
+                max="999"
+                value={newDriverNumber}
+                onChange={(e) => setNewDriverNumber(e.target.value)}
+                placeholder="Auto"
+              />
+            </div>
+            <div className="w-52">
+              <Select
+                label={t("teams.label")}
+                options={teamOptions}
+                value={newDriverTeamId}
+                onChange={(e) => setNewDriverTeamId(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleAddDriver}>{t("drivers.add")}</Button>
             <Button
               variant="secondary"
               onClick={() => {
                 setShowAddForm(false);
                 setNewDriverName("");
+                setNewDriverNumber("");
+                setNewDriverTeamId("");
                 setAddError("");
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -326,12 +394,22 @@ export default function DriversPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-16">Rank</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="text-center">Races</TableHead>
-                <TableHead className="text-center">Wins</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                <TableHead className="w-32 text-right">Actions</TableHead>
+                <TableHead className="w-16">{t("drivers.rank")}</TableHead>
+                <TableHead>{t("league.nameLabel")}</TableHead>
+                <TableHead>{t("teams.label")}</TableHead>
+                <TableHead className="text-center">#</TableHead>
+                <TableHead className="text-center">
+                  {t("drivers.races")}
+                </TableHead>
+                <TableHead className="text-center">
+                  {t("drivers.wins")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("drivers.points")}
+                </TableHead>
+                <TableHead className="w-32 text-right">
+                  {t("drivers.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -356,6 +434,10 @@ export default function DriversPage() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{driver.name}</TableCell>
+                  <TableCell>{driver.teamName ?? "-"}</TableCell>
+                  <TableCell className="text-center font-medium">
+                    {driver.number}
+                  </TableCell>
                   <TableCell className="text-center">{driver.races}</TableCell>
                   <TableCell className="text-center">{driver.wins}</TableCell>
                   <TableCell className="text-right font-semibold">
@@ -368,20 +450,20 @@ export default function DriversPage() {
                         className="text-[var(--color-primary)] hover:underline text-sm flex items-center gap-1"
                       >
                         <Edit2 className="w-4 h-4" />
-                        Edit
+                        {t("common.edit")}
                       </button>
                       <button
                         onClick={() => handleDeleteDriver(driver)}
-                        className="text-[var(--color-delete)] hover:underline text-sm flex items-center gap-1"
+                        className="text-[var(--color-delete)] hover:underline text-sm flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                         disabled={driver.races > 0}
                         title={
                           driver.races > 0
-                            ? "Cannot delete driver with race history"
-                            : "Delete driver"
+                            ? t("drivers.cannotDelete")
+                            : t("common.delete")
                         }
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        {t("common.delete")}
                       </button>
                     </div>
                   </TableCell>
@@ -393,13 +475,13 @@ export default function DriversPage() {
           <div className="text-center py-12">
             <Users className="w-16 h-16 mx-auto mb-4 text-[var(--color-muted)]" />
             <h3 className="text-xl font-semibold text-[var(--foreground)] mb-2">
-              No Drivers Yet
+              {t("drivers.noDriversYetTitle")}
             </h3>
             <p className="text-[var(--color-muted)] mb-6">
-              Add your first driver to start tracking standings.
+              {t("drivers.noDriversYetMsg")}
             </p>
             <Button onClick={() => setShowAddForm(true)}>
-              Add First Driver
+              {t("drivers.addFirst")}
             </Button>
           </div>
         )}
@@ -413,7 +495,7 @@ export default function DriversPage() {
               {sortedDrivers.length}
             </div>
             <div className="text-sm text-[var(--color-muted)]">
-              Total Drivers
+              {t("drivers.totalDrivers")}
             </div>
           </div>
           <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
@@ -421,7 +503,7 @@ export default function DriversPage() {
               {sortedDrivers.reduce((sum, d) => sum + d.totalPoints, 0)}
             </div>
             <div className="text-sm text-[var(--color-muted)]">
-              Total Points
+              {t("drivers.totalPoints")}
             </div>
           </div>
           <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
@@ -429,14 +511,16 @@ export default function DriversPage() {
               {sortedDrivers.reduce((sum, d) => sum + d.races, 0)}
             </div>
             <div className="text-sm text-[var(--color-muted)]">
-              Race Entries
+              {t("drivers.raceEntries")}
             </div>
           </div>
           <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-[var(--color-primary)]">
               {sortedDrivers.reduce((sum, d) => sum + d.wins, 0)}
             </div>
-            <div className="text-sm text-[var(--color-muted)]">Total Wins</div>
+            <div className="text-sm text-[var(--color-muted)]">
+              {t("drivers.totalWins")}
+            </div>
           </div>
         </div>
       )}
@@ -444,7 +528,7 @@ export default function DriversPage() {
       <Modal
         isOpen={!!editingDriver}
         onClose={() => setEditingDriver(null)}
-        title="Edit Driver"
+        title={t("drivers.editDriver")}
         footer={
           <div className="flex gap-4">
             <Button
@@ -452,40 +536,113 @@ export default function DriversPage() {
               className="flex-1"
               onClick={() => setEditingDriver(null)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button className="flex-1" onClick={handleSaveEdit}>
-              Save
+              {t("drivers.saveChanges")}
             </Button>
           </div>
         }
       >
         <Input
-          label="Driver Name"
+          label={t("drivers.driverName")}
           value={editName}
           onChange={(e) => {
             setEditName(e.target.value);
             setEditError("");
           }}
-          placeholder="Enter driver name"
+          placeholder={t("drivers.driverName")}
           error={editError}
         />
+
+        <div className="mt-4">
+          <Input
+            label={t("drivers.number")}
+            type="number"
+            min="1"
+            max="999"
+            value={editNumber}
+            onChange={(e) => {
+              setEditNumber(e.target.value);
+              setEditError("");
+            }}
+          />
+        </div>
+
+        <div className="mt-4">
+          <Select
+            label={t("teams.label")}
+            options={teamOptions}
+            value={editTeamId}
+            onChange={(e) => {
+              setEditTeamId(e.target.value);
+              setEditError("");
+            }}
+          />
+        </div>
 
         {editingDriver && (
           <div className="mt-4 p-4 bg-[var(--color-card)] rounded-xl">
             <div className="text-sm text-[var(--color-muted)] space-y-1">
               <div className="flex justify-between">
-                <span>Total Points:</span>
+                <span>{t("drivers.totalPoints")}:</span>
                 <span className="font-medium">{editingDriver.totalPoints}</span>
               </div>
               <div className="flex justify-between">
-                <span>Races:</span>
+                <span>{t("drivers.races")}:</span>
                 <span className="font-medium">{editingDriver.races}</span>
               </div>
               <div className="flex justify-between">
-                <span>Wins:</span>
+                <span>{t("drivers.number")}:</span>
+                <span className="font-medium">{editingDriver.number}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{t("drivers.wins")}:</span>
                 <span className="font-medium">{editingDriver.wins}</span>
               </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2 text-sm text-[var(--color-muted)]">
+                <span>{t("penalties.history")}</span>
+                <span className="font-medium">
+                  {editingDriver.penaltiesHistory.length}
+                </span>
+              </div>
+
+              {editingDriver.penaltiesHistory.length === 0 ? (
+                <p className="text-sm text-[var(--color-muted)]">
+                  {t("penalties.noneSeason")}
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-44 overflow-y-auto">
+                  {editingDriver.penaltiesHistory.map((penalty) => (
+                    <div
+                      key={penalty.id}
+                      className="text-xs border border-[var(--color-border)] rounded-lg px-2 py-2"
+                    >
+                      <div className="font-medium">
+                        {penalty.raceName} •{" "}
+                        {new Date(penalty.raceDate).toLocaleDateString(
+                          locale === "de" ? "de-DE" : "en-US",
+                        )}
+                      </div>
+                      <div className="text-[var(--color-muted)]">
+                        {penalty.type === "points"
+                          ? `${t("penalties.detailPoints")}: -${penalty.value}`
+                          : penalty.type === "seconds"
+                            ? `${t("penalties.detailSeconds")}: ${penalty.value}s`
+                            : `${t("penalties.detailGrid")}: +${penalty.value}`}
+                      </div>
+                      {penalty.note && (
+                        <div className="text-[var(--color-muted)]">
+                          {t("penalties.notePrefix")} {penalty.note}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -13,10 +13,16 @@ import {
   Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 import Input from "@/components/forms/Input";
 import Select from "@/components/forms/Select";
 import { api } from "@/lib/api";
-import { POINTS_SYSTEM } from "@/server/domain/constants";
+import { useLocale } from "@/LocaleContext";
+import {
+  POINTS_SYSTEM,
+  UNKNOWN_DRIVER_NAME,
+  UNKNOWN_DRIVER_TOKEN,
+} from "@/server/domain/constants";
 import type {
   LeagueDetailDTO,
   RaceDetailDTO,
@@ -29,12 +35,44 @@ interface RaceResultEntry {
   position: number;
   lapTime: string;
   fastestLap: boolean;
+  dnf: boolean;
+  penalties: PenaltyEntry[];
+}
+
+interface PenaltyEntry {
+  id: string;
+  type: "seconds" | "grid" | "points";
+  value: number;
+  note: string;
+}
+
+function normalizeResultsWithDnf(
+  results: RaceResultEntry[],
+): RaceResultEntry[] {
+  const finishers = results.filter((result) => !result.dnf);
+  const dnfResults = results.filter((result) => result.dnf);
+  return [...finishers, ...dnfResults].map((result, index) => ({
+    ...result,
+    position: index + 1,
+  }));
+}
+
+function normalizeTracks(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((track): track is string => typeof track === "string")
+    .map((track) => track.trim())
+    .filter((track) => track.length > 0);
 }
 
 export default function EditRacePage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
   const raceId = params.raceId as string;
+  const { t } = useLocale();
 
   const baseId = useId();
 
@@ -51,6 +89,14 @@ export default function EditRacePage() {
   const [customTrack, setCustomTrack] = useState("");
   const [date, setDate] = useState("");
   const [results, setResults] = useState<RaceResultEntry[]>([]);
+  const [penaltyModalResultId, setPenaltyModalResultId] = useState<
+    string | null
+  >(null);
+  const [penaltyType, setPenaltyType] = useState<"seconds" | "grid" | "points">(
+    "seconds",
+  );
+  const [penaltyValue, setPenaltyValue] = useState("5");
+  const [penaltyNote, setPenaltyNote] = useState("");
 
   // Validation state
   const [errors, setErrors] = useState<{
@@ -70,12 +116,18 @@ export default function EditRacePage() {
   useEffect(() => {
     Promise.all([api.leagues.get(leagueId), api.races.get(leagueId, raceId)])
       .then(async ([leagueData, raceData]) => {
+        if (leagueData.currentUserRole === "member") {
+          setPageError("Insufficient permissions");
+          return;
+        }
+
+        const leagueTracks = normalizeTracks(leagueData.tracks);
         setLeague(leagueData);
         setRaceName(raceData.name);
         setDate(raceData.date);
 
         // Determine track selection
-        if (leagueData.tracks.includes(raceData.track)) {
+        if (leagueTracks.includes(raceData.track)) {
           setTrack(raceData.track);
         } else {
           setTrack("__custom__");
@@ -90,6 +142,13 @@ export default function EditRacePage() {
             position: r.position,
             lapTime: r.lapTime || "",
             fastestLap: r.fastestLap,
+            dnf: r.dnf,
+            penalties: r.penalties.map((penalty) => ({
+              id: penalty.id,
+              type: penalty.type,
+              value: penalty.value,
+              note: penalty.note || "",
+            })),
           })),
         );
         setResultIdCounter(raceData.results.length);
@@ -113,19 +172,22 @@ export default function EditRacePage() {
   }, [leagueId, raceId, baseId]);
 
   // Get available drivers (not yet in results)
-  const usedDriverIds = new Set(results.map((r) => r.driverId));
+  const usedDriverIds = new Set(
+    results
+      .map((r) => r.driverId)
+      .filter((driverId) => driverId !== UNKNOWN_DRIVER_TOKEN),
+  );
   const availableDrivers = allDrivers.filter((d) => !usedDriverIds.has(d.id));
+  const leagueTracks = normalizeTracks(league?.tracks);
 
   // Track options
   const trackOptions = [
     { value: "", label: "Select a track..." },
-    ...(league?.tracks || []).map((t) => ({ value: t, label: t })),
+    ...leagueTracks.map((t) => ({ value: t, label: t })),
     { value: "__custom__", label: "+ Add new track" },
   ];
 
   const addResult = () => {
-    if (availableDrivers.length === 0) return;
-
     const newPosition = results.length + 1;
     setResults([
       ...results,
@@ -135,6 +197,8 @@ export default function EditRacePage() {
         lapTime: "",
         position: newPosition,
         fastestLap: false,
+        dnf: false,
+        penalties: [],
       },
     ]);
     setResultIdCounter((c) => c + 1);
@@ -150,7 +214,7 @@ export default function EditRacePage() {
       setResults(
         results.map((r) => ({
           ...r,
-          fastestLap: r.id === id,
+          fastestLap: r.id === id && !r.dnf,
           // Clear lap time for drivers who lose fastest lap status
           lapTime: r.id === id ? r.lapTime : "",
         })),
@@ -164,7 +228,7 @@ export default function EditRacePage() {
 
   const removeResult = (id: string) => {
     const newResults = results.filter((r) => r.id !== id);
-    setResults(newResults.map((r, index) => ({ ...r, position: index + 1 })));
+    setResults(normalizeResultsWithDnf(newResults));
   };
 
   const moveResult = (id: string, direction: "up" | "down") => {
@@ -183,7 +247,85 @@ export default function EditRacePage() {
       newResults[index],
     ];
 
-    setResults(newResults.map((r, i) => ({ ...r, position: i + 1 })));
+    setResults(normalizeResultsWithDnf(newResults));
+  };
+
+  const toggleDnf = (id: string) => {
+    setResults((current) => {
+      const updated = current.map((result) => {
+        if (result.id !== id) {
+          return result;
+        }
+
+        const nextDnf = !result.dnf;
+        return {
+          ...result,
+          dnf: nextDnf,
+          fastestLap: nextDnf ? false : result.fastestLap,
+          lapTime: nextDnf ? "" : result.lapTime,
+        };
+      });
+
+      return normalizeResultsWithDnf(updated);
+    });
+  };
+
+  const openPenaltyModal = (resultId: string) => {
+    setPenaltyModalResultId(resultId);
+    setPenaltyType("seconds");
+    setPenaltyValue("5");
+    setPenaltyNote("");
+  };
+
+  const addPenalty = () => {
+    if (!penaltyModalResultId) {
+      return;
+    }
+
+    const value = Number.parseInt(penaltyValue, 10);
+    if (Number.isNaN(value) || value < 1) {
+      return;
+    }
+
+    setResults((current) =>
+      current.map((result) => {
+        if (result.id !== penaltyModalResultId) {
+          return result;
+        }
+
+        return {
+          ...result,
+          penalties: [
+            ...result.penalties,
+            {
+              id: `${result.id}-penalty-${Date.now()}-${result.penalties.length}`,
+              type: penaltyType,
+              value,
+              note: penaltyNote.trim(),
+            },
+          ],
+        };
+      }),
+    );
+
+    setPenaltyModalResultId(null);
+  };
+
+  const removePenalty = (resultId: string, penaltyId: string) => {
+    setResults((current) =>
+      current.map((result) => {
+        if (result.id !== resultId) {
+          return result;
+        }
+
+        return {
+          ...result,
+          penalties: result.penalties.filter(
+            (penalty) => penalty.id !== penaltyId,
+          ),
+        };
+      }),
+    );
   };
 
   const validate = (): boolean => {
@@ -217,17 +359,25 @@ export default function EditRacePage() {
 
     const selectedTrack = track === "__custom__" ? customTrack : track;
 
+    const normalizedResults = normalizeResultsWithDnf(results);
+
     setSubmitting(true);
     try {
       await api.races.update(leagueId, raceId, {
         name: raceName,
         track: selectedTrack,
         date,
-        results: results.map((r) => ({
+        results: normalizedResults.map((r) => ({
           driverId: r.driverId,
           position: r.position,
           lapTime: r.lapTime || null,
-          fastestLap: r.fastestLap,
+          fastestLap: r.dnf ? false : r.fastestLap,
+          dnf: r.dnf,
+          penalties: r.penalties.map((penalty) => ({
+            type: penalty.type,
+            value: penalty.value,
+            note: penalty.note || null,
+          })),
         })),
       });
       setShowSuccess(true);
@@ -245,6 +395,18 @@ export default function EditRacePage() {
     const basePoints = POINTS_SYSTEM[position] || 0;
     const bonus = hasFastestLap && position <= 10 ? 1 : 0;
     return basePoints + bonus;
+  };
+
+  const getResultPointsPreview = (result: RaceResultEntry) => {
+    if (result.driverId === UNKNOWN_DRIVER_TOKEN || result.dnf) {
+      return 0;
+    }
+    const penaltyDeduction = result.penalties
+      .filter((penalty) => penalty.type === "points")
+      .reduce((sum, penalty) => sum + penalty.value, 0);
+    return (
+      getPointsWithBonus(result.position, result.fastestLap) - penaltyDeduction
+    );
   };
 
   if (loading) {
@@ -367,7 +529,6 @@ export default function EditRacePage() {
               variant="outline"
               size="sm"
               onClick={addResult}
-              disabled={availableDrivers.length === 0}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Position
@@ -385,9 +546,9 @@ export default function EditRacePage() {
                   key={result.id}
                   className="bg-white rounded-xl p-4 border border-[var(--color-border)]"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     {/* Position Badge */}
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => moveResult(result.id, "up")}
@@ -399,19 +560,21 @@ export default function EditRacePage() {
                       </button>
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
-                          result.position === 1
-                            ? "bg-yellow-500"
-                            : result.position === 2
-                              ? "bg-gray-400"
-                              : result.position === 3
-                                ? "bg-amber-700"
-                                : "bg-[var(--color-primary)]"
+                          result.dnf
+                            ? "bg-red-600"
+                            : result.position === 1
+                              ? "bg-yellow-500"
+                              : result.position === 2
+                                ? "bg-gray-400"
+                                : result.position === 3
+                                  ? "bg-amber-700"
+                                  : "bg-[var(--color-primary)]"
                         }`}
                         aria-label={`Position ${result.position}`}
                       >
-                        {result.position}
+                        {result.dnf ? "DNF" : result.position}
                       </div>
-                      {result.position <= 3 && (
+                      {!result.dnf && result.position <= 3 && (
                         <span className="text-xs text-[var(--color-muted)]">
                           {result.position === 1 && "1st"}
                           {result.position === 2 && "2nd"}
@@ -430,7 +593,7 @@ export default function EditRacePage() {
                     </div>
 
                     {/* Driver Select */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <Select
                         label=""
                         value={result.driverId}
@@ -439,38 +602,46 @@ export default function EditRacePage() {
                         }
                         options={[
                           { value: "", label: "Select driver..." },
+                          {
+                            value: UNKNOWN_DRIVER_TOKEN,
+                            label: UNKNOWN_DRIVER_NAME,
+                          },
                           ...availableDrivers.map((d) => ({
                             value: d.id,
-                            label: d.name,
+                            label: `#${d.number} ${d.name}`,
                           })),
                           ...(result.driverId
                             ? allDrivers
                                 .filter((d) => d.id === result.driverId)
-                                .map((d) => ({ value: d.id, label: d.name }))
+                                .map((d) => ({
+                                  value: d.id,
+                                  label: `#${d.number} ${d.name}`,
+                                }))
                             : []),
                         ]}
                       />
                     </div>
 
                     {/* Lap Time Input */}
-                    <div className="min-w-[120px]">
-                      <Input
-                        label=""
-                        type="text"
-                        value={result.lapTime}
-                        onChange={(e) =>
-                          updateResult(result.id, "lapTime", e.target.value)
-                        }
-                        placeholder="01:23.456"
-                        className="text-center font-mono"
-                        disabled={!result.fastestLap}
-                      />
-                    </div>
+                    {result.fastestLap && !result.dnf && (
+                      <div className="w-20 shrink-0">
+                        <Input
+                          label=""
+                          type="text"
+                          value={result.lapTime}
+                          onChange={(e) =>
+                            updateResult(result.id, "lapTime", e.target.value)
+                          }
+                          placeholder="1:23"
+                          className="text-center font-mono"
+                        />
+                      </div>
+                    )}
 
                     {/* Points Preview */}
-                    <div className="text-center min-w-[60px]">
+                    <div className="text-center min-w-[52px] shrink-0">
                       <div className="text-lg font-bold text-[var(--color-primary)]">
-                        {getPointsWithBonus(result.position, result.fastestLap)}
+                        {getResultPointsPreview(result)}
                       </div>
                       <div className="text-xs text-[var(--color-muted)]">
                         points
@@ -479,7 +650,7 @@ export default function EditRacePage() {
 
                     {/* Fastest Lap */}
                     <label
-                      className="flex items-center gap-2 cursor-pointer"
+                      className="flex items-center gap-1 cursor-pointer shrink-0"
                       title="Fastest Lap"
                     >
                       <input
@@ -494,6 +665,7 @@ export default function EditRacePage() {
                         }
                         className="w-4 h-4 accent-[var(--color-primary)]"
                         aria-label="Fastest lap"
+                        disabled={result.dnf}
                       />
                       <Zap
                         className="w-4 h-4 text-purple-500"
@@ -501,6 +673,28 @@ export default function EditRacePage() {
                       />
                       <span className="sr-only">Fastest lap</span>
                     </label>
+
+                    <Button
+                      type="button"
+                      variant={result.dnf ? "secondary" : "outline"}
+                      size="sm"
+                      className="px-2"
+                      onClick={() => toggleDnf(result.id)}
+                      title={t("raceExtras.dnf")}
+                    >
+                      D
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="px-2"
+                      onClick={() => openPenaltyModal(result.id)}
+                      title={t("penalties.button")}
+                    >
+                      P
+                    </Button>
 
                     {/* Remove */}
                     <button
@@ -512,6 +706,34 @@ export default function EditRacePage() {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
+
+                  {result.penalties.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {result.penalties.map((penalty) => (
+                        <div
+                          key={penalty.id}
+                          className="text-xs bg-[var(--color-card)] border border-[var(--color-border)] rounded px-2 py-1 flex items-center gap-2"
+                        >
+                          <span>
+                            {penalty.type === "points"
+                              ? `${t("penalties.summaryPoints")} -${penalty.value}`
+                              : penalty.type === "seconds"
+                                ? `${penalty.value}s`
+                                : `${t("penalties.summaryGrid")} +${penalty.value}`}
+                            {penalty.note ? ` • ${penalty.note}` : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removePenalty(result.id, penalty.id)}
+                            className="text-[var(--color-delete)]"
+                            aria-label={t("penalties.removeAria")}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -585,6 +807,55 @@ export default function EditRacePage() {
           </Button>
         </div>
       </form>
+
+      <Modal
+        isOpen={penaltyModalResultId !== null}
+        onClose={() => setPenaltyModalResultId(null)}
+        title={t("penalties.addTitle")}
+        footer={
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setPenaltyModalResultId(null)}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button type="button" className="flex-1" onClick={addPenalty}>
+              {t("common.save")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <Select
+            label={t("penalties.typeLabel")}
+            value={penaltyType}
+            onChange={(e) =>
+              setPenaltyType(e.target.value as "seconds" | "grid" | "points")
+            }
+            options={[
+              { value: "seconds", label: t("penalties.optionSeconds") },
+              { value: "grid", label: t("penalties.optionGrid") },
+              { value: "points", label: t("penalties.optionPoints") },
+            ]}
+          />
+          <Input
+            label={t("penalties.valueLabel")}
+            type="number"
+            min="1"
+            value={penaltyValue}
+            onChange={(e) => setPenaltyValue(e.target.value)}
+          />
+          <Input
+            label={t("penalties.noteOptional")}
+            value={penaltyNote}
+            onChange={(e) => setPenaltyNote(e.target.value)}
+            placeholder={t("penalties.noteOptional")}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

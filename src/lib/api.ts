@@ -8,14 +8,27 @@ import type {
   ApiErrorResponse,
   LeagueListDTO,
   LeagueDetailDTO,
+  LeagueMemberDTO,
+  LeagueInviteCodeDTO,
   SeasonDTO,
+  TeamRankingDTO,
   DriverDTO,
   RaceListDTO,
   RaceDetailDTO,
 } from "@/server/domain/dto";
 import type {
   CreateLeagueInput,
+  CreateInviteCodeInput,
+  ConfirmPasswordChangeInput,
+  ConfirmPasswordResetInput,
+  JoinByCodeInput,
+  RegisterInput,
+  RequestPasswordResetInput,
+  RevokeSessionInput,
+  StartLoginChallengeInput,
   UpdateLeagueInput,
+  UpdateMembershipRoleInput,
+  VerifyRegisterInput,
   CreateSeasonInput,
   CreateDriverInput,
   UpdateDriverInput,
@@ -53,14 +66,6 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Include API key if set (for write operations)
-  const apiKey = typeof window !== "undefined"
-    ? localStorage.getItem("kartixa_api_key")
-    : null;
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
-  }
-
   const res = await fetch(url, {
     ...options,
     headers,
@@ -86,6 +91,97 @@ async function request<T>(
 // ============================================================================
 
 export const api = {
+  auth: {
+    register: {
+      start: (data: RegisterInput) =>
+        request<{ challengeId: string; expiresAt: string; requiresVerification: boolean }>(
+          "/auth/register",
+          {
+            method: "POST",
+            body: JSON.stringify(data),
+          }
+        ),
+      verify: (data: VerifyRegisterInput) =>
+        request<{ id: string; name: string; email: string }>("/auth/register/verify", {
+          method: "POST",
+          body: JSON.stringify(data),
+        }),
+    },
+
+    login: {
+      challenge: (data: StartLoginChallengeInput) =>
+        request<{ requiresVerification: boolean; challengeId: string | null; expiresAt: string | null }>(
+          "/auth/login/challenge",
+          {
+            method: "POST",
+            body: JSON.stringify(data),
+          }
+        ),
+    },
+
+    profile: {
+      get: () => request<{ id: string; name: string; email: string }>("/auth/profile"),
+      update: (data: { name: string }) =>
+        request<{ id: string; name: string }>("/auth/profile", {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }),
+    },
+
+    sessions: {
+      list: () =>
+        request<
+          {
+            id: string;
+            deviceId: string;
+            userAgent: string | null;
+            ipAddress: string | null;
+            createdAt: string;
+            lastSeenAt: string;
+            expiresAt: string;
+            isCurrent: boolean;
+          }[]
+        >("/auth/sessions"),
+      revoke: (data: RevokeSessionInput) =>
+        request<{ revoked: boolean }>("/auth/sessions", {
+          method: "DELETE",
+          body: JSON.stringify(data),
+        }),
+    },
+
+    password: {
+      reset: {
+        request: (data: RequestPasswordResetInput) =>
+          request<{ accepted: boolean; challengeId: string | null; expiresAt: string | null }>(
+            "/auth/password/reset/request",
+            {
+            method: "POST",
+            body: JSON.stringify(data),
+            }
+          ),
+        confirm: (data: ConfirmPasswordResetInput) =>
+          request<{ updated: boolean }>("/auth/password/reset/confirm", {
+            method: "POST",
+            body: JSON.stringify(data),
+          }),
+      },
+      change: {
+        request: () =>
+          request<{ challengeId: string; expiresAt: string; requiresVerification: boolean }>(
+            "/auth/password/change/request",
+            {
+              method: "POST",
+            }
+          ),
+        confirm: (data: ConfirmPasswordChangeInput) =>
+          request<{ updated: boolean }>("/auth/password/change/confirm", {
+            method: "POST",
+            body: JSON.stringify(data),
+          }),
+      },
+    },
+  },
+
   leagues: {
     list: () => request<LeagueListDTO[]>("/leagues"),
 
@@ -107,6 +203,59 @@ export const api = {
       request<{ deleted: boolean }>(`/leagues/${leagueId}`, {
         method: "DELETE",
       }),
+
+    joinByCode: (data: JoinByCodeInput) =>
+      request<{ leagueId: string; role: "admin" | "member" }>(`/leagues/join-by-code`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    members: {
+      list: (leagueId: string) =>
+        request<LeagueMemberDTO[]>(`/leagues/${leagueId}/members`),
+
+      updateRole: (
+        leagueId: string,
+        memberId: string,
+        data: UpdateMembershipRoleInput
+      ) =>
+        request<LeagueMemberDTO>(`/leagues/${leagueId}/members/${memberId}`, {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }),
+
+      remove: (leagueId: string, memberId: string) =>
+        request<{ removed: boolean }>(`/leagues/${leagueId}/members/${memberId}`, {
+          method: "DELETE",
+        }),
+
+      leave: (leagueId: string) =>
+        request<{ left: boolean }>(`/leagues/${leagueId}/members/me`, {
+          method: "DELETE",
+        }),
+    },
+
+    inviteCodes: {
+      list: (leagueId: string) =>
+        request<LeagueInviteCodeDTO[]>(`/leagues/${leagueId}/invite-codes`),
+
+      create: (leagueId: string, data: CreateInviteCodeInput) =>
+        request<LeagueInviteCodeDTO>(`/leagues/${leagueId}/invite-codes`, {
+          method: "POST",
+          body: JSON.stringify(data),
+        }),
+
+      deactivate: (leagueId: string, inviteId: string) =>
+        request<LeagueInviteCodeDTO>(`/leagues/${leagueId}/invite-codes/${inviteId}`, {
+          method: "PATCH",
+        }),
+
+      rotate: (leagueId: string, data: CreateInviteCodeInput) =>
+        request<LeagueInviteCodeDTO>(`/leagues/${leagueId}/invite-codes/rotate`, {
+          method: "POST",
+          body: JSON.stringify(data),
+        }),
+    },
   },
 
   // ============================================================================
@@ -118,6 +267,16 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+
+    delete: (leagueId: string, seasonId: string) =>
+      request<{ deleted: boolean }>(`/leagues/${leagueId}/seasons/${seasonId}`, {
+        method: "DELETE",
+      }),
+  },
+
+  teams: {
+    listRankings: (leagueId: string, seasonId: string) =>
+      request<TeamRankingDTO[]>(`/leagues/${leagueId}/seasons/${seasonId}/teams`),
   },
 
   // ============================================================================

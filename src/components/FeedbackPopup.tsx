@@ -4,8 +4,10 @@ import { useState } from "react";
 import Modal from "./Modal";
 import Button from "./Button";
 import { MessageSquare, Star, CheckCircle } from "lucide-react";
+import { useLocale } from "@/LocaleContext";
 
 export default function FeedbackPopup() {
+  const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
@@ -27,14 +29,16 @@ export default function FeedbackPopup() {
 
   return (
     <>
-      {/* Feedback button - fixed at bottom right */}
+      {/* Feedback button - fixed at bottom right, above mobile bottom nav */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 z-40"
-        aria-label="Give feedback"
+        className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-4 sm:px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 z-40"
+        aria-label={t("feedback.button")}
       >
         <MessageSquare className="h-5 w-5" />
-        <span className="font-medium">Feedback</span>
+        <span className="font-medium hidden sm:inline">
+          {t("feedback.button")}
+        </span>
       </button>
 
       {/* Feedback modal */}
@@ -45,12 +49,12 @@ export default function FeedbackPopup() {
           setRating(null);
           setSubmitted(false);
         }}
-        title="We'd love your feedback!"
+        title={t("feedback.title")}
       >
         {!submitted ? (
           <div className="py-4">
             <p className="text-[var(--color-muted)] mb-6 text-center">
-              How would you rate your experience?
+              {t("feedback.description")}
             </p>
 
             {/* Rating circles */}
@@ -62,9 +66,10 @@ export default function FeedbackPopup() {
                   className={`
                     w-14 h-14 rounded-full border-2 transition-all duration-200
                     flex items-center justify-center font-bold text-lg
-                    ${rating === value
-                      ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white scale-110"
-                      : "border-gray-300 text-gray-600 hover:border-[var(--color-primary)] hover:scale-105"
+                    ${
+                      rating === value
+                        ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white scale-110"
+                        : "border-gray-300 text-gray-600 hover:border-[var(--color-primary)] hover:scale-105"
                     }
                   `}
                   aria-label={`Rate ${value} out of 5`}
@@ -76,8 +81,8 @@ export default function FeedbackPopup() {
 
             {/* Labels */}
             <div className="flex justify-between text-sm text-[var(--color-muted)] mb-6">
-              <span>1 = Poor</span>
-              <span>5 = Excellent</span>
+              <span>{t("feedback.poor")}</span>
+              <span>{t("feedback.excellent")}</span>
             </div>
 
             {/* Star visualization */}
@@ -86,10 +91,11 @@ export default function FeedbackPopup() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className={`h-8 w-8 transition-colors duration-200 ${star <= rating
-                      ? "text-yellow-400 fill-yellow-400"
-                      : "text-gray-300"
-                      }`}
+                    className={`h-8 w-8 transition-colors duration-200 ${
+                      star <= rating
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                    }`}
                   />
                 ))}
               </div>
@@ -102,13 +108,13 @@ export default function FeedbackPopup() {
                   htmlFor="feedback-comment"
                   className="block text-sm font-medium text-[var(--foreground)] mb-2"
                 >
-                  Any comments? (optional)
+                  {t("feedback.commentLabel")}
                 </label>
                 <textarea
                   id="feedback-comment"
                   rows={3}
                   className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-card)] text-[var(--foreground)]"
-                  placeholder="Tell us what you like or what we can improve..."
+                  placeholder={t("feedback.commentPlaceholder")}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
@@ -125,10 +131,10 @@ export default function FeedbackPopup() {
                   setComment("");
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button onClick={handleSubmit} disabled={rating === null}>
-                Submit Feedback
+                {t("feedback.submit")}
               </Button>
             </div>
           </div>
@@ -137,9 +143,11 @@ export default function FeedbackPopup() {
             <div className="mb-4">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Thank you!</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              {t("feedback.thankYou")}
+            </h3>
             <p className="text-[var(--color-muted)]">
-              Your feedback has been submitted successfully.
+              {t("feedback.submitted")}
             </p>
           </div>
         )}

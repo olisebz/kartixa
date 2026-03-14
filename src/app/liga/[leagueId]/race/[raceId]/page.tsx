@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
+import { useLocale } from "@/LocaleContext";
 import {
   Table,
   TableHeader,
@@ -27,6 +28,7 @@ export default function RaceDetailPage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
   const raceId = params.raceId as string;
+  const { t, locale } = useLocale();
 
   const [league, setLeague] = useState<LeagueDetailDTO | null>(null);
   const [race, setRace] = useState<RaceDetailDTO | null>(null);
@@ -59,8 +61,8 @@ export default function RaceDetailPage() {
   if (error || !league || !race) {
     return (
       <div className="py-8 text-center">
-        <p className="text-red-600 mb-4">Failed to load race: {error}</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
+        <p className="text-red-600 mb-4">{t("common.failedLoad")}: {error}</p>
+        <Button onClick={() => window.location.reload()}>{t("common.retry")}</Button>
       </div>
     );
   }
@@ -73,10 +75,12 @@ export default function RaceDetailPage() {
   // Find fastest lap driver
   const fastestLapDriver = race.results.find((r) => r.fastestLap);
 
+  const dateLocale = locale === "de" ? "de-DE" : "en-US";
+
   return (
-    <div className="py-8">
+    <div className="py-4 sm:py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <Button
           href={`/liga/${leagueId}`}
           variant="secondary"
@@ -85,17 +89,17 @@ export default function RaceDetailPage() {
         >
           ← Back to {league.name}
         </Button>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--foreground)]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] truncate">
               {race.name}
             </h1>
-            <p className="text-[var(--color-muted)] mt-1">
+            <p className="text-[var(--color-muted)] mt-1 text-sm sm:text-base">
               {race.track} •{" "}
-              {new Date(race.date).toLocaleDateString("en-US", {
-                weekday: "long",
+              {new Date(race.date).toLocaleDateString(dateLocale, {
+                weekday: "short",
                 year: "numeric",
-                month: "long",
+                month: "short",
                 day: "numeric",
               })}
             </p>
@@ -103,40 +107,44 @@ export default function RaceDetailPage() {
           <Button
             href={`/liga/${leagueId}/race/${raceId}/edit`}
             variant="outline"
+            size="sm"
+            className="shrink-0 self-start sm:self-auto"
           >
             <Edit className="w-4 h-4 mr-2" />
-            Edit Race
+            {t("race.edit")}
           </Button>
         </div>
       </div>
 
       {/* Race Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <UsersIcon className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-          <div className="text-3xl font-bold text-[var(--color-primary)]">
+          <UsersIcon className="w-5 h-5 mx-auto mb-2 text-[var(--color-primary)]" />
+          <div className="text-2xl font-bold text-[var(--color-primary)]">
             {race.results.length}
           </div>
-          <div className="text-sm text-[var(--color-muted)]">Participants</div>
+          <div className="text-xs text-[var(--color-muted)]">{t("race.participants")}</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <Trophy className="w-8 h-8 mx-auto text-yellow-500" />
-          <div className="text-sm text-[var(--color-muted)]">
+          <Trophy className="w-5 h-5 mx-auto mb-2 text-yellow-500" />
+          <div className="text-sm font-semibold text-[var(--foreground)] truncate">
             {sortedResults[0]?.driverName || "N/A"}
           </div>
+          <div className="text-xs text-[var(--color-muted)]">{t("race.winner")}</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <Award className="w-6 h-6 mx-auto mb-2 text-[var(--color-primary)]" />
-          <div className="text-3xl font-bold text-[var(--color-primary)]">
+          <Award className="w-5 h-5 mx-auto mb-2 text-[var(--color-primary)]" />
+          <div className="text-2xl font-bold text-[var(--color-primary)]">
             {race.results.reduce((sum, r) => sum + r.points, 0)}
           </div>
-          <div className="text-sm text-[var(--color-muted)]">Total Points</div>
+          <div className="text-xs text-[var(--color-muted)]">{t("race.totalPoints")}</div>
         </div>
         <div className="bg-[var(--color-card)] rounded-xl p-4 text-center">
-          <Zap className="w-8 h-8 mx-auto text-purple-500" />
-          <div className="text-sm text-[var(--color-muted)]">
+          <Zap className="w-5 h-5 mx-auto mb-2 text-purple-500" />
+          <div className="text-sm font-semibold text-[var(--foreground)] truncate">
             {fastestLapDriver?.driverName || "N/A"}
           </div>
+          <div className="text-xs text-[var(--color-muted)]">{t("race.fastestLap")}</div>
         </div>
       </div>
 
@@ -144,57 +152,117 @@ export default function RaceDetailPage() {
       <div className="bg-[var(--color-card)] rounded-2xl p-6">
         <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
           <Trophy className="w-6 h-6 text-[var(--color-primary)]" />
-          Race Results
+          {t("race.raceResults")}
         </h2>
 
         {sortedResults.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">Position</TableHead>
-                <TableHead>Driver</TableHead>
-                <TableHead className="text-right">Lap Time</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                <TableHead className="w-24 text-center">Fastest Lap</TableHead>
+                <TableHead className="w-16">{t("race.position")}</TableHead>
+                <TableHead>{t("race.driver")}</TableHead>
+                <TableHead className="text-right">{t("race.lapTime")}</TableHead>
+                <TableHead className="text-right">{t("race.pts")}</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  {t("penalties.column")}
+                </TableHead>
+                <TableHead className="hidden sm:table-cell w-24 text-center">
+                  {t("race.fastestLap")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedResults.map((result) => (
-                <TableRow key={result.driverId}>
+                <TableRow key={`${result.driverId}-${result.position}`}>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm ${
-                          result.position === 1
-                            ? "bg-yellow-500"
-                            : result.position === 2
-                              ? "bg-gray-400"
-                              : result.position === 3
-                                ? "bg-amber-700"
-                                : "bg-[var(--color-primary)]"
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 ${
+                          result.dnf
+                            ? "bg-red-600"
+                            : result.position === 1
+                              ? "bg-yellow-500"
+                              : result.position === 2
+                                ? "bg-gray-400"
+                                : result.position === 3
+                                  ? "bg-amber-700"
+                                  : "bg-[var(--color-primary)]"
                         }`}
                       >
-                        {result.position}
+                        {result.dnf ? t("raceExtras.dnf") : result.position}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {result.driverName}
-                    {result.position === 1 && (
-                      <Trophy className="w-4 h-4 inline-block ml-2 text-yellow-500" />
-                    )}
+                    <div className="flex flex-col">
+                      <span className="flex items-center gap-1">
+                        {result.driverName}
+                        {result.position === 1 && (
+                          <Trophy className="w-4 h-4 inline-block text-yellow-500" />
+                        )}
+                        {result.fastestLap && !result.dnf && (
+                          <Zap
+                            className="w-4 h-4 inline-block text-purple-500 sm:hidden"
+                            aria-label={t("race.fastestLap")}
+                          />
+                        )}
+                      </span>
+                      {result.teamName && (
+                        <span className="text-xs text-[var(--color-muted)]">
+                          {result.teamName}
+                        </span>
+                      )}
+                      {result.penalties.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1 sm:hidden">
+                          {result.penalties.map((penalty) => (
+                            <span
+                              key={penalty.id}
+                              className="text-xs bg-red-50 border border-red-200 text-red-700 rounded px-1.5 py-0.5"
+                              title={penalty.note || undefined}
+                            >
+                              {penalty.type === "points"
+                                ? `${t("penalties.summaryPoints")} -${penalty.value}`
+                                : penalty.type === "seconds"
+                                  ? `${penalty.value}s`
+                                  : `${t("penalties.summaryGrid")} +${penalty.value}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono text-[var(--color-primary)]">
+                  <TableCell className="text-right font-mono text-[var(--color-primary)] text-sm">
                     {result.lapTime || "-"}
                   </TableCell>
                   <TableCell className="text-right font-semibold">
                     {result.points}
                   </TableCell>
-                  <TableCell className="text-center">
-                    {result.fastestLap && (
+                  <TableCell className="hidden sm:table-cell">
+                    {result.penalties.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {result.penalties.map((penalty) => (
+                          <span
+                            key={penalty.id}
+                            className="text-xs bg-[var(--color-card)] border border-[var(--color-border)] rounded px-2 py-1"
+                            title={penalty.note || undefined}
+                          >
+                            {penalty.type === "points"
+                              ? `${t("penalties.summaryPoints")} -${penalty.value}`
+                              : penalty.type === "seconds"
+                                ? `${penalty.value}s`
+                                : `${t("penalties.summaryGrid")} +${penalty.value}`}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[var(--color-muted)]">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-center">
+                    {result.fastestLap && !result.dnf && (
                       <Zap
-                        className="w-4 h-4 inline-block text-[var(--color-primary)]"
-                        aria-label="Fastest Lap"
+                        className="w-4 h-4 inline-block text-purple-500"
+                        aria-label={t("race.fastestLap")}
                       />
                     )}
                   </TableCell>
@@ -204,7 +272,7 @@ export default function RaceDetailPage() {
           </Table>
         ) : (
           <p className="text-[var(--color-muted)] text-center py-8">
-            No results recorded for this race.
+            {t("race.noResults")}
           </p>
         )}
       </div>
@@ -213,7 +281,7 @@ export default function RaceDetailPage() {
       {sortedResults.length >= 3 && (
         <div className="mt-8 bg-[var(--color-card)] rounded-2xl p-6">
           <h2 className="text-xl font-semibold text-[var(--foreground)] mb-6 text-center">
-            Podium
+            {t("race.podium")}
           </h2>
           <div className="flex items-end justify-center gap-4">
             {/* 2nd Place */}
@@ -226,7 +294,7 @@ export default function RaceDetailPage() {
                 {sortedResults[1]?.driverName}
               </div>
               <div className="text-sm text-[var(--color-muted)] mt-1">
-                {sortedResults[1]?.points} pts
+                {sortedResults[1]?.points} {t("race.pts")}
               </div>
             </div>
             {/* 1st Place */}
@@ -239,7 +307,7 @@ export default function RaceDetailPage() {
                 {sortedResults[0]?.driverName}
               </div>
               <div className="text-sm text-[var(--color-muted)] mt-1">
-                {sortedResults[0]?.points} pts
+                {sortedResults[0]?.points} {t("race.pts")}
               </div>
             </div>
             {/* 3rd Place */}
@@ -252,7 +320,7 @@ export default function RaceDetailPage() {
                 {sortedResults[2]?.driverName}
               </div>
               <div className="text-sm text-[var(--color-muted)] mt-1">
-                {sortedResults[2]?.points} pts
+                {sortedResults[2]?.points} {t("race.pts")}
               </div>
             </div>
           </div>

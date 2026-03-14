@@ -15,6 +15,17 @@ interface ListItem {
   value: string;
 }
 
+function normalizeTracks(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((track): track is string => typeof track === "string")
+    .map((track) => track.trim())
+    .filter((track) => track.length > 0);
+}
+
 export default function EditLeaguePage() {
   const params = useParams();
   const leagueId = params.leagueId as string;
@@ -26,11 +37,13 @@ export default function EditLeaguePage() {
   const [pageError, setPageError] = useState<string | null>(null);
 
   const [trackIdCounter, setTrackIdCounter] = useState(0);
+  const [teamIdCounter, setTeamIdCounter] = useState(0);
 
   // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tracks, setTracks] = useState<ListItem[]>([]);
+  const [teams, setTeams] = useState<ListItem[]>([]);
 
   // Validation state
   const [errors, setErrors] = useState<{
@@ -46,16 +59,31 @@ export default function EditLeaguePage() {
     api.leagues
       .get(leagueId)
       .then((data) => {
+        if (data.currentUserRole === "member") {
+          setPageError("Insufficient permissions");
+          return;
+        }
+
+        const normalizedTracks = normalizeTracks(data.tracks);
         setLeague(data);
         setName(data.name);
         setDescription(data.description);
         setTracks(
-          data.tracks.map((track, index) => ({
+          normalizedTracks.map((track, index) => ({
             id: `${baseId}-track-${index}`,
             value: track,
           })),
         );
-        setTrackIdCounter(data.tracks.length);
+        setTrackIdCounter(normalizedTracks.length);
+        setTeams(
+          data.teams
+            .filter((team) => team.isActive)
+            .map((team, index) => ({
+              id: `${baseId}-team-${index}`,
+              value: team.name,
+            })),
+        );
+        setTeamIdCounter(data.teams.filter((team) => team.isActive).length);
       })
       .catch((err) => {
         if (err.status === 404) {
@@ -108,6 +136,19 @@ export default function EditLeaguePage() {
     }
   };
 
+  const addTeam = () => {
+    setTeams([...teams, { id: `${baseId}-team-${teamIdCounter}`, value: "" }]);
+    setTeamIdCounter((c) => c + 1);
+  };
+
+  const updateTeam = (id: string, value: string) => {
+    setTeams(teams.map((team) => (team.id === id ? { ...team, value } : team)));
+  };
+
+  const removeTeam = (id: string) => {
+    setTeams(teams.filter((team) => team.id !== id));
+  };
+
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
 
@@ -135,6 +176,9 @@ export default function EditLeaguePage() {
         name: name.trim(),
         description: description.trim(),
         tracks: tracks.filter((t) => t.value.trim()).map((t) => t.value.trim()),
+        teams: teams
+          .filter((team) => team.value.trim())
+          .map((team) => team.value.trim()),
       });
       setLeague(updated);
       setShowSuccess(true);
@@ -264,6 +308,46 @@ export default function EditLeaguePage() {
           ) : (
             <p className="text-[var(--color-muted)] text-center py-4">
               No tracks added. Click &quot;Add Track&quot; to add one.
+            </p>
+          )}
+        </div>
+
+        <div className="bg-[var(--color-card)] rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-[var(--foreground)]">
+              Teams
+            </h2>
+            <Button type="button" variant="outline" size="sm" onClick={addTeam}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Team
+            </Button>
+          </div>
+
+          {teams.length > 0 ? (
+            <div className="space-y-3">
+              {teams.map((team) => (
+                <div key={team.id} className="flex items-center gap-3">
+                  <Input
+                    label=""
+                    value={team.value}
+                    onChange={(e) => updateTeam(team.id, e.target.value)}
+                    placeholder="Team name"
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeTeam(team.id)}
+                    className="text-[var(--color-delete)] hover:text-[var(--color-delete-hover)] p-2"
+                    aria-label="Remove team"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[var(--color-muted)] text-center py-4">
+              No active teams. Click &quot;Add Team&quot; to add one.
             </p>
           )}
         </div>
