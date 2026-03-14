@@ -6,7 +6,6 @@
  * - CORS
  * - Request size limits
  * - Structured logging
- * - Auth guard hook (Phase 2 ready)
  *
  * Usage in route.ts:
  *   export const GET = apiHandler({ handler: async (req, ctx) => { ... } });
@@ -19,7 +18,6 @@ import { errorResponse } from "../domain/dto";
 import { config } from "../config";
 import { logger } from "../logger";
 import { checkRateLimit } from "./rateLimit";
-import type { Role } from "../domain/constants";
 
 // ============================================================================
 // TYPES
@@ -34,8 +32,6 @@ export interface HandlerConfig<TBody = unknown> {
   handler: (req: NextRequest, ctx: RouteContext, body: TBody) => Promise<NextResponse>;
   /** Zod schema for request body validation (POST/PUT/PATCH) */
   bodySchema?: ZodSchema<TBody>;
-  /** Required role (Phase 2). Currently: "public" = no auth, "admin" = API key */
-  role?: Role;
   /** Maximum request body size in bytes (default: 100KB) */
   maxBodySize?: number;
 }
@@ -66,29 +62,8 @@ function applyCorsHeaders(req: NextRequest, response: NextResponse): void {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
   response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, X-API-Key, Authorization");
+  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   response.headers.set("Access-Control-Max-Age", "86400");
-}
-
-// ============================================================================
-// AUTH GUARD (Phase 1: API Key | Phase 2: JWT/Session ready)
-// ============================================================================
-
-function checkAuth(req: NextRequest, role: Role): void {
-  // Phase 2: If auth is enabled, check JWT/session here
-  if (config.authEnabled) {
-    // TODO Phase 2: Implement JWT/session verification
-    // For now, fall through to API key check
-  }
-
-  // Phase 1: "admin" role requires API key for write operations
-  if (role === "admin" && config.apiKey) {
-    const providedKey = req.headers.get("x-api-key");
-    if (providedKey !== config.apiKey) {
-      throw new AppError("UNAUTHORIZED", "Valid API key required for this operation");
-    }
-  }
-  // "public" role: no auth needed
 }
 
 // ============================================================================
@@ -110,7 +85,7 @@ export function apiHandler<TBody = unknown>(cfg: HandlerConfig<TBody>) {
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
         req.headers.get("x-real-ip") ??
         "unknown";
-      const rateLimitResult = checkRateLimit(clientIp);
+      const rateLimitResult = await checkRateLimit(clientIp);
       if (!rateLimitResult.allowed) {
         const res = NextResponse.json(
           errorResponse("RATE_LIMITED", "Too many requests. Please try again later."),
@@ -122,8 +97,22 @@ export function apiHandler<TBody = unknown>(cfg: HandlerConfig<TBody>) {
         return res;
       }
 
-      // 2. Auth check
-      checkAuth(req, cfg.role ?? "public");
+      // 2. CSRF protection: validate Origin header on mutating requests
+      const mutatingMethods = ["POST", "PUT", "PATCH", "DELETE"];
+      if (mutatingMethods.includes(req.method)) {
+        const origin = req.headers.get("origin");
+        if (origin !== null) {
+          const allowed = config.corsOrigins.split(",").map((s) => s.trim());
+          if (!allowed.includes(origin) && !allowed.includes("*")) {
+            const res = NextResponse.json(
+              errorResponse("FORBIDDEN", "Cross-origin request blocked"),
+              { status: 403 }
+            );
+            applySecurityHeaders(res);
+            return res;
+          }
+        }
+      }
 
       // 3. Body parsing + validation
       let body = undefined as TBody;
