@@ -47,12 +47,13 @@ services:
       DATABASE_USER: ${DATABASE_USER:-kartixa}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-kartixa_dev}
       DATABASE_NAME: ${DATABASE_NAME:-kartixa}
-      API_KEY: ${API_KEY:-}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
+      AUTH_CHALLENGE_SECRET: ${AUTH_CHALLENGE_SECRET:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       NODE_ENV: production
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
-      AUTH_ENABLED: ${AUTH_ENABLED:-false}
 
 volumes:
   kartixa_db_data:
