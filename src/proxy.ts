@@ -5,7 +5,8 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function proxy(_request: NextRequest) {
   const response = NextResponse.next();
   const isProd = process.env.NODE_ENV === "production";
 

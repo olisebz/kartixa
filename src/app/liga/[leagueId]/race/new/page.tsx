@@ -105,7 +105,7 @@ export default function NewRacePage() {
         setPageError(err.message);
       })
       .finally(() => setLoading(false));
-  }, [leagueId]);
+  }, [leagueId, t]);
 
   const [raceName, setRaceName] = useState("");
   const [track, setTrack] = useState("");

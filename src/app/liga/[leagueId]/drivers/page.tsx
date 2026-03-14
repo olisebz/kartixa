@@ -92,7 +92,7 @@ export default function DriversPage() {
         setPageError(err.message);
       })
       .finally(() => setLoading(false));
-  }, [leagueId]);
+  }, [leagueId, t]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);

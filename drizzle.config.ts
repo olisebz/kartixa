@@ -1,4 +1,4 @@
-export default {
+const config = {
   schema: "./src/server/db/schema.ts",
   out: "./drizzle",
   dialect: "mysql",
@@ -10,3 +10,5 @@ export default {
     database: process.env.DATABASE_NAME ?? "kartixa",
   },
 };
+
+export default config;

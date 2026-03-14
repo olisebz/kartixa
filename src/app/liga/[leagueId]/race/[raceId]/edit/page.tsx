@@ -23,11 +23,7 @@ import {
   UNKNOWN_DRIVER_NAME,
   UNKNOWN_DRIVER_TOKEN,
 } from "@/server/domain/constants";
-import type {
-  LeagueDetailDTO,
-  RaceDetailDTO,
-  DriverDTO,
-} from "@/server/domain/dto";
+import type { LeagueDetailDTO, DriverDTO } from "@/server/domain/dto";
 
 interface RaceResultEntry {
   id: string;

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db";
 import { leagueInviteCodes, leagueMemberships, users } from "../db/schema";
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../domain/errors";
+import { ConflictError, NotFoundError, ValidationError } from "../domain/errors";
 import type { LeagueInviteCodeDTO, LeagueMemberDTO } from "../domain/dto";
 import { logger } from "../logger";
 
