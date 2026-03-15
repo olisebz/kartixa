@@ -8,62 +8,10 @@ import { eq, and } from "drizzle-orm";
 import { getDb } from "../db";
 import { races, raceResults, raceResultPenalties, seasons, drivers, teams } from "../db/schema";
 import { NotFoundError, ValidationError } from "../domain/errors";
-import {
-  calculatePoints,
-  UNKNOWN_DRIVER_NAME,
-  UNKNOWN_DRIVER_NUMBER,
-  UNKNOWN_DRIVER_TOKEN,
-} from "../domain/constants";
+import { UNKNOWN_DRIVER_NAME, UNKNOWN_DRIVER_NUMBER, UNKNOWN_DRIVER_TOKEN } from "../domain/constants";
 import type { CreateRaceInput, UpdateRaceInput } from "../domain/schemas";
 import type { RaceListDTO, RaceDetailDTO, RaceResultDTO } from "../domain/dto";
-
-function calculatePointsAfterPenalties(input: {
-  position: number;
-  fastestLap: boolean;
-  isUnknownDriver: boolean;
-  dnf: boolean;
-  penalties: { type: "seconds" | "grid" | "points"; value: number }[];
-}): number {
-  if (input.isUnknownDriver || input.dnf) {
-    return 0;
-  }
-
-  const basePoints = calculatePoints(input.position, input.fastestLap);
-  const pointsPenalty = input.penalties
-    .filter((penalty) => penalty.type === "points")
-    .reduce((sum, penalty) => sum + penalty.value, 0);
-
-  return basePoints - pointsPenalty;
-}
-
-async function getOrCreateUnknownDriverId(seasonId: string): Promise<string> {
-  const db = getDb();
-
-  const [existing] = await db
-    .select({ id: drivers.id })
-    .from(drivers)
-    .where(
-      and(
-        eq(drivers.seasonId, seasonId),
-        eq(drivers.name, UNKNOWN_DRIVER_NAME),
-        eq(drivers.driverNumber, UNKNOWN_DRIVER_NUMBER)
-      )
-    );
-
-  if (existing) {
-    return existing.id;
-  }
-
-  const id = uuidv4();
-  await db.insert(drivers).values({
-    id,
-    seasonId,
-    name: UNKNOWN_DRIVER_NAME,
-    driverNumber: UNKNOWN_DRIVER_NUMBER,
-  });
-
-  return id;
-}
+import { calculatePointsAfterPenalties, getOrCreateUnknownDriverId } from "./pointsCalculationService";
 
 export const raceService = {
   /** List races for a season */

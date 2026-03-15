@@ -8,22 +8,12 @@ import Button from "@/components/Button";
 import Input from "@/components/forms/Input";
 import Textarea from "@/components/forms/Textarea";
 import { api } from "@/lib/api";
+import { normalizeTracks } from "@/lib/normalize";
 import type { LeagueDetailDTO } from "@/server/domain/dto";
 
 interface ListItem {
   id: string;
   value: string;
-}
-
-function normalizeTracks(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((track): track is string => typeof track === "string")
-    .map((track) => track.trim())
-    .filter((track) => track.length > 0);
 }
 
 export default function EditLeaguePage() {
