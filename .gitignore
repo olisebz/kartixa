@@ -66,3 +66,24 @@ fastlane/test_output
 # Secrets / lokale Konfigurationen
 *.local.xcconfig
 Secrets.plist
+Secrets.xcconfig
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.p8
+AuthKey_*.p8
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+GoogleService-Info.plist
+
+# Signierte Builds / Archive
+*.ipa
+*.xcarchive
+exportOptions.plist
+
+# Claude Code lokale Einstellungen
+.claude/settings.local.json
