@@ -1,17 +1,21 @@
-//
-//  kartixaApp.swift
-//  kartixa
-//
-//  Created by Oliver Zenger on 21.05.2026.
-//
-
 import SwiftUI
 
 @main
 struct kartixaApp: App {
+    @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootTabView()
+                .environment(appState)
+                .preferredColorScheme(.dark)
+                .tint(KX.Color.green)
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        appState.refreshICloudAvailability()
+                    }
+                }
         }
     }
 }

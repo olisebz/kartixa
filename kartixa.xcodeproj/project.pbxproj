@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A78635182FBF4C97006313E9 /* kartixa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = kartixa.app; path = "/Users/oliver/Development/kartixa/build/Debug-iphoneos/kartixa.app"; sourceTree = "<absolute>"; };
-		A78635252FBF4C99006313E9 /* kartixaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = kartixaTests.xctest; path = "/Users/oliver/Development/kartixa/build/Debug-iphoneos/kartixa.app/PlugIns/kartixaTests.xctest"; sourceTree = "<absolute>"; };
-		A786352F2FBF4C99006313E9 /* kartixaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = kartixaUITests.xctest; path = "/Users/oliver/Development/kartixa/build/Debug-iphoneos/kartixaUITests-Runner.app/PlugIns/kartixaUITests.xctest"; sourceTree = "<absolute>"; };
+		A70A0A0F2FDB51E300B50503 /* kartixa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kartixa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A70A0A102FDB51E300B50503 /* kartixaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +78,9 @@
 				A786351A2FBF4C97006313E9 /* kartixa */,
 				A78635282FBF4C99006313E9 /* kartixaTests */,
 				A78635322FBF4C99006313E9 /* kartixaUITests */,
+				A70A0A0F2FDB51E300B50503 /* kartixa.app */,
+				A70A0A102FDB51E300B50503 /* kartixaTests.xctest */,
+				A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -103,7 +106,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixa;
-			productReference = A78635182FBF4C97006313E9 /* kartixa.app */;
+			productReference = A70A0A0F2FDB51E300B50503 /* kartixa.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A78635242FBF4C99006313E9 /* kartixaTests */ = {
@@ -126,7 +129,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixaTests;
-			productReference = A78635252FBF4C99006313E9 /* kartixaTests.xctest */;
+			productReference = A70A0A102FDB51E300B50503 /* kartixaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		A786352E2FBF4C99006313E9 /* kartixaUITests */ = {
@@ -149,7 +152,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixaUITests;
-			productReference = A786352F2FBF4C99006313E9 /* kartixaUITests.xctest */;
+			productReference = A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
