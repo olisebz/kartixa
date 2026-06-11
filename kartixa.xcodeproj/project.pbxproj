@@ -24,14 +24,27 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A70A0A0F2FDB51E300B50503 /* kartixa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kartixa.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A70A0A102FDB51E300B50503 /* kartixaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7FCF4BC2FC1BB4100956CD0 /* kartixa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kartixa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7FCF4BD2FC1BB4100956CD0 /* kartixaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7FCF4BE2FC1BB4100956CD0 /* kartixaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kartixaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A7FCF4DD2FC1C6E200956CD0 /* Exceptions for "kartixa" folder in "kartixa" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A78635172FBF4C97006313E9 /* kartixa */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A786351A2FBF4C97006313E9 /* kartixa */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A7FCF4DD2FC1C6E200956CD0 /* Exceptions for "kartixa" folder in "kartixa" target */,
+			);
 			path = kartixa;
 			sourceTree = "<group>";
 		};
@@ -78,9 +91,9 @@
 				A786351A2FBF4C97006313E9 /* kartixa */,
 				A78635282FBF4C99006313E9 /* kartixaTests */,
 				A78635322FBF4C99006313E9 /* kartixaUITests */,
-				A70A0A0F2FDB51E300B50503 /* kartixa.app */,
-				A70A0A102FDB51E300B50503 /* kartixaTests.xctest */,
-				A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */,
+				A7FCF4BC2FC1BB4100956CD0 /* kartixa.app */,
+				A7FCF4BD2FC1BB4100956CD0 /* kartixaTests.xctest */,
+				A7FCF4BE2FC1BB4100956CD0 /* kartixaUITests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -106,7 +119,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixa;
-			productReference = A70A0A0F2FDB51E300B50503 /* kartixa.app */;
+			productReference = A7FCF4BC2FC1BB4100956CD0 /* kartixa.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A78635242FBF4C99006313E9 /* kartixaTests */ = {
@@ -129,7 +142,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixaTests;
-			productReference = A70A0A102FDB51E300B50503 /* kartixaTests.xctest */;
+			productReference = A7FCF4BD2FC1BB4100956CD0 /* kartixaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		A786352E2FBF4C99006313E9 /* kartixaUITests */ = {
@@ -152,7 +165,7 @@
 			packageProductDependencies = (
 			);
 			productName = kartixaUITests;
-			productReference = A70A0A112FDB51E300B50503 /* kartixaUITests.xctest */;
+			productReference = A7FCF4BE2FC1BB4100956CD0 /* kartixaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -387,8 +400,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2692N8LV96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = kartixa/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -418,8 +433,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2692N8LV96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = kartixa/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
